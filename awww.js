@@ -315,7 +315,7 @@ class ResizeHandle extends InputWidget {
      */
 
     static get _unqualifiedNodeName() {
-        return 'resize-handle';
+        return 'resize';
     }
 
     static _staticInit() {
