@@ -236,8 +236,10 @@ function UnifiedTouchAndMouseControlTrait() {
 
 function RangeTrait() {
 
-    this.opt.minValue = this.opt.minValue || 0.0;
-    this.opt.maxValue = this.opt.maxValue || 1.0;
+    // Do not assume this runs from a class constructor and keep existing opts
+
+    this.opt.minValue = 'minValue' in this.opt ? this.minValue : 0;
+    this.opt.maxValue = 'maxValue' in this.opt ? this.maxValue : 1.0;
 
     const proto = this.constructor.prototype;
 
