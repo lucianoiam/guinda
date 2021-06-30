@@ -147,6 +147,8 @@
 
     <script>
 
+    const cssRuleList = document.styleSheets[0].cssRules;
+
     const widgets = [...document.getElementById('widgets').querySelectorAll('*')]
                         .filter(el => el.nodeName.startsWith('A-'));
 
@@ -164,7 +166,19 @@
         preWithHtml.innerText = widgetClone.outerHTML;
         container.insertBefore(preWithHtml, insertPointElem);
 
-        // Insert widget callback code before each widget
+        // Insert widget CSS after each widget
+
+        for (const cssRule of cssRuleList) {
+            if (cssRule.selectorText.startsWith(widget.nodeName.toLowerCase())) {
+                const preWithCss = document.createElement('pre');
+                const rule = cssRule.cssText.replaceAll('{', '{\n').replaceAll(';', ';\n')
+                                .replace(/ +/g,' ');
+                preWithCss.innerText = formatBlock(rule);
+                container.insertBefore(preWithCss, insertPointElem.nextSibling);
+            }
+        }
+
+        // Insert widget callback code after each widget
 
         const listener = widget.nodeName.split('-').map((s, i) => {
             return i > 0 ? s[0] + s.slice(1).toLowerCase() : s[0].toLowerCase();
@@ -172,8 +186,8 @@
 
         if (listener in window) {
             const preWithJs = document.createElement('pre');
-            preWithJs.innerText = window[listener];
-            container.insertBefore(preWithJs, insertPointElem);
+            preWithJs.innerText = formatBlock(window[listener].toString())
+            container.insertBefore(preWithJs, insertPointElem.nextSibling);
         }
 
     }
@@ -191,6 +205,16 @@
         log.style.visibility = 'visible';
         
         toastTimeout = setTimeout(() => log.style.visibility = 'hidden', 1000);
+    }
+
+    function formatBlock(block) {
+        const lines = block.split('\n');
+        if (lines.length < 2) {
+            return lines;
+        } 
+        return lines[0] + '\n'
+                + lines.slice(1, lines.length - 1).map(l => '   ' + l.trim()).join('\n') + '\n'
+                + lines.slice(-1)[0].trim();
     }
 
     </script>
