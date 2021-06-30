@@ -37,6 +37,7 @@
 
     <pre id="log"></pre>
 
+
     <!-- TODO: remove this after allowing to configure the resize handle using attributes -->
     <script>
     document.querySelector('a-resize').opt = {minWidth: 100, minHeight: 100, maxWidth: 600, maxHeight: 300};
@@ -53,47 +54,6 @@
         style.height = this.value.height + 'px';
         demo_log(this.value.width + 'x' + this.value.height);
     }
-
-    </script>
-
-
-    <!-- Make it easy to update the demo  -->
-
-    <script>
-
-    window.demo_log = (text) => document.getElementById('log').innerText = text;
-
-    [...document.getElementById('widgets').querySelectorAll('*')].forEach((el) => {
-
-        if (!el.nodeName.startsWith('A-')) {
-            return;
-        }
-
-        const isChildOfWidgets = el.parentNode.id == 'widgets';
-        const widgets = isChildOfWidgets ? el.parentNode : el.parentNode.parentNode;
-        const insertPointElem = isChildOfWidgets ? el : el.parentNode;
-
-        // Insert widget HTML after each widget
-
-        const elClone = el.cloneNode();
-        elClone.removeAttribute('style');
-        const preWithHtml = document.createElement('pre');
-        preWithHtml.innerText = elClone.outerHTML;
-        widgets.insertBefore(preWithHtml, insertPointElem);
-
-        // Insert widget callback code after each widget
-
-        const listener = el.nodeName.split('-').map((s, i) => {
-            return i > 0 ? s[0] + s.slice(1).toLowerCase() : s[0].toLowerCase();
-        }).join('') + 'Listener'; // <a-knob> -> aKnobListener
-
-        if (listener in window) {
-            const preWithJs = document.createElement('pre');
-            preWithJs.innerText = window[listener];
-            widgets.insertBefore(preWithJs, insertPointElem);
-        }
-
-    });
 
     </script>
 
@@ -143,7 +103,46 @@
       }
 
     </style>
-    
+
+    <script>
+
+    window.demo_log = (text) => document.getElementById('log').innerText = text;
+
+    [...document.getElementById('widgets').querySelectorAll('*')].forEach((el) => {
+
+        if (!el.nodeName.startsWith('A-')) {
+            return;
+        }
+
+        const isChildOfWidgets = el.parentNode.id == 'widgets';
+        const widgets = isChildOfWidgets ? el.parentNode : el.parentNode.parentNode;
+        const insertPointElem = isChildOfWidgets ? el : el.parentNode;
+
+        // Insert widget HTML after each widget
+
+        const elClone = el.cloneNode();
+        elClone.removeAttribute('style');
+        const preWithHtml = document.createElement('pre');
+        preWithHtml.innerText = elClone.outerHTML;
+        widgets.insertBefore(preWithHtml, insertPointElem);
+
+        // Insert widget callback code after each widget
+
+        const listener = el.nodeName.split('-').map((s, i) => {
+            return i > 0 ? s[0] + s.slice(1).toLowerCase() : s[0].toLowerCase();
+        }).join('') + 'Listener'; // <a-knob> -> aKnobListener
+
+        if (listener in window) {
+            const preWithJs = document.createElement('pre');
+            preWithJs.innerText = window[listener];
+            widgets.insertBefore(preWithJs, insertPointElem);
+        }
+
+    });
+
+    </script>
+
+
   </body>
 
 </html>
