@@ -91,6 +91,11 @@ class Widget extends HTMLElement {
         return attr ? attr.value : def;
     }
 
+    _styleProp(name, def) {
+        const prop = getComputedStyle(this).getPropertyValue(name).trim();
+        return prop.length > 0 ? prop : def;
+    }
+
     _instanceInit() {
         //
         // [NotSupportedError: A newly constructed custom element must not have attributes
@@ -393,10 +398,10 @@ class ResizeHandle extends InputWidget {
         this.style.bottom = '0px';
 
         // Configure graphic
-        this._setOptFromAttrString('graphic', 'lines');
+
         const svgData = this.constructor._svgData;
 
-        switch (this.opt.graphic) {
+        switch (this._styleProp('--graphic', 'dots').toLowerCase()) {
             case 'dots':
                 this.innerHTML = svgData.DOTS;
                 break;

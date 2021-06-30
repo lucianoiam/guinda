@@ -19,6 +19,7 @@
     a-resize {
         width: 37px;
         height: 37px;
+        --graphic: dots;
     }
 
     a-resize path {
@@ -61,7 +62,6 @@
                 minheight="100"
                 maxscale="2"
                 keepaspectratio="true"
-                graphic="dots"
                 oninput="aResizeListener.call(this)">
             </a-resize>
         
@@ -94,7 +94,7 @@
      -->
 
     <style>
-    
+
     body {
         background: #000;
         color: #fff;
