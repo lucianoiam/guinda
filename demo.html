@@ -57,7 +57,7 @@
         const style = this.parentNode.style;
         style.width = this.value.width + 'px';
         style.height = this.value.height + 'px';
-        demo_log(this.value.width + 'x' + this.value.height);
+        demo_log(Math.round(this.value.width) + 'x' + Math.round(this.value.height));
     }
 
     </script>
@@ -75,6 +75,10 @@
         color: #fff;
         user-select: none;
         -webkit-user-select: none;
+      }
+
+      pre {
+        white-space: pre-wrap;
       }
 
       hr {
