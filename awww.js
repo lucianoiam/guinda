@@ -58,7 +58,7 @@ class Widget extends HTMLElement {
     
     constructor() {
         super();
-        this._opt = {};
+        this.opt = {};
     }
 
     connectedCallback() {
@@ -84,18 +84,40 @@ class Widget extends HTMLElement {
         // }
         //
         // There is no problem in setting attributes during super() though.
-        // This is a silly limitation to the otherwise nice looking HTML5/ES6.
         //
     }
 }
 
+
 /**
- *  Base class for widgets supporting unified mouse and touch control
+ *  Base class for stateful input widgets
  */
 
-class ControlEvent extends UIEvent {}
+class InputWidget extends Widget {
 
-class TouchAndMouseControllableWidget extends Widget {
+    /**
+     *  Public
+     */
+
+    get value() {
+        return this._value;
+    }
+
+    set value(value) {
+        if (this._value == value) {
+            return;
+        }
+
+        this._value = value;
+        
+        // Unlike a regular range HTMLInputElement, externally updating the
+        // value will result in an input event being dispatched.
+        // HTMLInputElement type=range triggers Event, type=text -> InputEvent.
+
+        const ev = new Event('input');
+        ev.value = this._value;
+        this.dispatchEvent(ev);
+    }
 
     /**
      *  Internal
@@ -103,56 +125,70 @@ class TouchAndMouseControllableWidget extends Widget {
 
     constructor() {
         super();
-
-        // Handle touch events preventing subsequent simulated mouse events
-
-        this.addEventListener('touchstart', (ev) => {
-            this._dispatchControlStart(ev, ev.touches[0].clientX, ev.touches[0].clientY);
-
-            if (ev.cancelable) {
-                ev.preventDefault();
-            }
-        });
-
-        this.addEventListener('touchmove', (ev) => {
-            this._dispatchControlContinue(ev, ev.touches[0].clientX, ev.touches[0].clientY);
-
-            if (ev.cancelable) {
-                ev.preventDefault();
-            }
-        });
+        this._value = 0;
         
-        this.addEventListener('touchend', (ev) => {
-            this._dispatchControlEnd(ev);
-
-            if (ev.cancelable) {
-                ev.preventDefault();
-            }
-        });
-
-        // Simulate touch behavior for mouse, for example react to move events outside element
-
-        const mouseMoveListener = (ev) => {
-            this._dispatchControlContinue(ev, ev.clientX, ev.clientY);
-        };
-
-        const mouseUpListener = (ev) => {
-            window.removeEventListener('mouseup', mouseUpListener);
-            window.removeEventListener('mousemove', mouseMoveListener);
-
-            this._dispatchControlEnd(ev);
-        }
-    
-        this.addEventListener('mousedown', (ev) => {
-            window.addEventListener('mousemove', mouseMoveListener);
-            window.addEventListener('mouseup', mouseUpListener);
-
-            this._dispatchControlStart(ev, ev.clientX, ev.clientY);
-        });
+        UnifiedTouchAndMouseControlTrait.apply(this);
     }
 
-    _dispatchControlStart(originalEvent, clientX, clientY) {
-        const ev = this._createControlEvent('controlstart', originalEvent);
+}
+
+
+/**
+ * Traits
+ */
+
+class ControlEvent extends UIEvent {}
+
+function UnifiedTouchAndMouseControlTrait() {
+
+    // Handle touch events preventing subsequent simulated mouse events
+
+    this.addEventListener('touchstart', (ev) => {
+        dispatchControlStart(ev, ev.touches[0].clientX, ev.touches[0].clientY);
+
+        if (ev.cancelable) {
+            ev.preventDefault();
+        }
+    });
+
+    this.addEventListener('touchmove', (ev) => {
+        dispatchControlContinue(ev, ev.touches[0].clientX, ev.touches[0].clientY);
+
+        if (ev.cancelable) {
+            ev.preventDefault();
+        }
+    });
+    
+    this.addEventListener('touchend', (ev) => {
+        dispatchControlEnd(ev);
+
+        if (ev.cancelable) {
+            ev.preventDefault();
+        }
+    });
+
+    // Simulate touch behavior for mouse, for example react to move events outside element
+
+    this.addEventListener('mousedown', (ev) => {
+        window.addEventListener('mousemove', mouseMoveListener);
+        window.addEventListener('mouseup', mouseUpListener);
+
+        dispatchControlStart(ev, ev.clientX, ev.clientY);
+    });
+
+    const mouseMoveListener = (ev) => {
+        dispatchControlContinue(ev, ev.clientX, ev.clientY);
+    };
+
+    const mouseUpListener = (ev) => {
+        window.removeEventListener('mouseup', mouseUpListener);
+        window.removeEventListener('mousemove', mouseMoveListener);
+
+        dispatchControlEnd(ev);
+    };
+
+    const dispatchControlStart = (originalEvent, clientX, clientY) => {
+        const ev = createControlEvent('controlstart', originalEvent);
 
         ev.clientX = clientX;
         ev.clientY = clientY;
@@ -161,10 +197,10 @@ class TouchAndMouseControllableWidget extends Widget {
         this._prevClientY = clientY;
 
         this.dispatchEvent(ev);
-    }
+    };
 
-    _dispatchControlContinue(originalEvent, clientX, clientY) {
-        const ev = this._createControlEvent('controlcontinue', originalEvent);
+    const dispatchControlContinue = (originalEvent, clientX, clientY) => {
+        const ev = createControlEvent('controlcontinue', originalEvent);
 
         // movementX/Y is not available in TouchEvent instances
 
@@ -177,14 +213,15 @@ class TouchAndMouseControllableWidget extends Widget {
         this._prevClientY = clientY;
 
         this.dispatchEvent(ev);
-    }
+    };
 
-    _dispatchControlEnd(originalEvent) {
-        const ev = this._createControlEvent('controlend', originalEvent);
+    const dispatchControlEnd = (originalEvent) => {
+        const ev = createControlEvent('controlend', originalEvent);
         this.dispatchEvent(ev);
-    }
+    };
 
-    _createControlEvent(name, originalEvent) {
+    // This works as a static function so function() can be used instead of =>
+    function createControlEvent(name, originalEvent) {
         const ev = new ControlEvent(name);
         ev.originalEvent = originalEvent;
 
@@ -197,84 +234,31 @@ class TouchAndMouseControllableWidget extends Widget {
 
 }
 
-/**
- *  Base class for stateful input widgets
- */
+function RangeTrait() {
 
-class InputWidget extends TouchAndMouseControllableWidget {
+    this.opt.minValue = this.opt.minValue || 0.0;
+    this.opt.maxValue = this.opt.maxValue || 1.0;
 
-    /**
-     *  Public
-     */
+    const proto = this.constructor.prototype;
 
-    get value() {
-        return this._value;
-    }
+    proto._range = () => {
+        return this.opt.maxValue - this.opt.minValue;
+    };
 
-    set value(value) {
-        // Unlike a regular range HTMLInputElement, externally updating the
-        // value will result in an input event being dispatched.
-        this._setValue(value);
-    }
+    proto._clamp = (value) => {
+        return Math.max(this.opt.minValue, Math.min(this.opt.maxValue, value));
+    };
 
-    /**
-     *  Internal
-     */
+    proto._normalize = (value) => {
+        return (value - this.opt.minValue) / this._range();
+    };
 
-    constructor() {
-        super();
-        this._value = 0;
-    }
-
-    _setValue(value) {
-        if (this._value == value) {
-            return;
-        }
-
-        this._value = value;
-
-        // Range type HTMLInputElement triggers an Event, text type InputEvent.
-        const ev = new Event('input');
-        ev.value = this._value;
-        this.dispatchEvent(ev);
-    }
+    proto._denormalize = (value) => {
+        return this.opt.minValue + value * this._range();
+    };
 
 }
 
-/**
- *  Base class for widgets that hold a value within a range
- */
-
-class RangeInputWidget extends InputWidget {
-
-    /**
-     *  Internal
-     */
-
-    constructor() {
-        super();
-
-        this._opt.minValue = this._opt.minValue || 0.0;
-        this._opt.maxValue = this._opt.maxValue || 1.0;
-    }
-
-    _range() {
-        return this._opt.maxValue - this._opt.minValue;
-    }
-
-    _clamp(value) {
-        return Math.max(this._opt.minValue, Math.min(this._opt.maxValue, value));
-    }
-
-    _normalize(value) {
-        return (value - this._opt.minValue) / this._range();
-    }
-
-    _denormalize(value) {
-        return this._opt.minValue + value * this._range();
-    }
-
-}
 
 /**
  * Support
@@ -309,8 +293,9 @@ class SvgMath {
 
 }
 
+
 /**
- *  Widget implementations
+ *  Concrete widget implementations
  */
 
 class ResizeHandle extends InputWidget {
@@ -359,24 +344,24 @@ class ResizeHandle extends InputWidget {
         super._instanceInit();
 
         // Default minimum size is the current document size
-        this._opt.minWidth = this._opt.minWidth || document.body.clientWidth;
-        this._opt.minHeight = this._opt.minHeight || document.body.clientHeight;
+        this.opt.minWidth = this.opt.minWidth || document.body.clientWidth;
+        this.opt.minHeight = this.opt.minHeight || document.body.clientHeight;
 
-        if (this._opt.maxScale) {
+        if (this.opt.maxScale) {
             // Set the maximum size to maxScale times the minimum size 
-            this._opt.maxWidth = this._opt.maxScale * this._opt.minWidth;
-            this._opt.maxHeight = this._opt.maxScale * this._opt.minHeight;
+            this.opt.maxWidth = this.opt.maxScale * this.opt.minWidth;
+            this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
         } else {
             // Default maximum size is the device screen size
-            this._opt.maxWidth = this._opt.maxWidth || window.screen.width;
-            this._opt.maxHeight = this._opt.maxHeight || window.screen.height;
+            this.opt.maxWidth = this.opt.maxWidth || window.screen.width;
+            this.opt.maxHeight = this.opt.maxHeight || window.screen.height;
         }
 
         // Keep aspect ratio while resizing, default to yes
-        this._opt.keepAspectRatio = this._opt.keepAspectRatio === false ? false : true;
+        this.opt.keepAspectRatio = this.opt.keepAspectRatio === false ? false : true;
 
         // Initialize state
-        this._aspectRatio = this._opt.minWidth / this._opt.minHeight;
+        this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
         this._width = 0;
         this._height = 0;
         
@@ -391,7 +376,7 @@ class ResizeHandle extends InputWidget {
         const svgData = this.constructor._themeSvgData;
 
         // Configure graphic
-        switch (this._opt.theme || 'dots') {
+        switch (this.opt.theme || 'dots') {
             case 'dots':
                 this.innerHTML = svgData.DOTS;
                 break;
@@ -406,6 +391,10 @@ class ResizeHandle extends InputWidget {
         this.addEventListener('controlcontinue', this._onDrag);
     }
 
+    /**
+     *  Private
+     */
+
     _onGrab(ev) {
         this._width = document.body.clientWidth;
         this._height = document.body.clientHeight;
@@ -415,12 +404,12 @@ class ResizeHandle extends InputWidget {
         // FIXME: On Windows, touchmove events stop triggering after calling callback,
         //        which in turn calls DistrhoUI::setSize(). Mouse resizing works OK.
         let newWidth = this._width + ev.movementX;
-        newWidth = Math.max(this._opt.minWidth, Math.min(this._opt.maxWidth, newWidth));
+        newWidth = Math.max(this.opt.minWidth, Math.min(this.opt.maxWidth, newWidth));
 
         let newHeight = this._height + ev.movementY;
-        newHeight = Math.max(this._opt.minHeight, Math.min(this._opt.maxHeight, newHeight));
+        newHeight = Math.max(this.opt.minHeight, Math.min(this.opt.maxHeight, newHeight));
 
-        if (this._opt.keepAspectRatio) {
+        if (this.opt.keepAspectRatio) {
             if (ev.movementX > ev.movementY) {
                 newHeight = newWidth / this._aspectRatio;
             } else {
@@ -432,13 +421,13 @@ class ResizeHandle extends InputWidget {
             this._width = newWidth;
             this._height = newHeight;
             const k = window.devicePixelRatio;
-            this._setValue({width: k * this._width, height: k * this._height});
+            this.value = {width: k * this._width, height: k * this._height};
         }
     }
 
 }
 
-class Knob extends RangeInputWidget {
+class Knob extends InputWidget {
 
     /**
      *  Internal
@@ -463,6 +452,8 @@ class Knob extends RangeInputWidget {
     _instanceInit() {
         super._instanceInit();
 
+        RangeTrait.apply(this);
+
         const This = this.constructor;
 
         this.innerHTML = This._svgData;
@@ -477,6 +468,10 @@ class Knob extends RangeInputWidget {
         this.addEventListener('controlcontinue', this._onMove);
     }
 
+    /**
+     *  Private
+     */
+
     _redraw() {
         const This = this.constructor;
         const range = Math.abs(This._trackStartAngle) + Math.abs(This._trackEndAngle);
@@ -486,7 +481,7 @@ class Knob extends RangeInputWidget {
     }
 
     _onGrab(ev) {
-        this._startValue = this._value;
+        this._startValue = this.value;
         this._axisTracker = [];
         this._dragDistance = 0;
     }
@@ -514,12 +509,15 @@ class Knob extends RangeInputWidget {
             dv = this._range() * this._dragDistance / this.clientHeight;
         }
 
-        this._setValue(this._clamp(this._startValue + dv));
+        this.value = this._clamp(this._startValue + dv);
     }
 
 }
 
-// Initialize all concrete widget classes
+
+/**
+ *  Static library initialization
+ */
 
 {
     [ResizeHandle, Knob].forEach((cls) => cls._staticInit());
