@@ -12,7 +12,7 @@
 
   <body>
 
-    <div id="demo">
+    <div id="widgets">
 
         <!--
           Custom elements cannot be self-closing
@@ -22,7 +22,7 @@
         <h4>Knob</h4>
 
         <!-- TODO: Allow to set range with min and max attributes -->
-        <a-knob oninput="aKnobListener.call(this)"></a-knob>
+        <a-knob oninput="demo_log(this.value.toFixed(2))"></a-knob>
 
         <hr>
         <h4>Resize Handle</h4>
@@ -35,6 +35,7 @@
 
     </div>
 
+    <pre id="log"></pre>
 
     <!-- TODO: remove this after allowing to configure the resize handle using attributes -->
     <script>
@@ -46,14 +47,11 @@
 
     <script>
 
-    function aKnobListener() {
-        console.log(this.value);
-    }
-
-    function aResizeListener(size) {
+    function aResizeListener() {
         const style = this.parentNode.style;
         style.width = this.value.width + 'px';
         style.height = this.value.height + 'px';
+        demo_log(this.value.width + 'x' + this.value.height);
     }
 
     </script>
@@ -63,15 +61,17 @@
 
     <script>
 
-    [...document.getElementById('demo').querySelectorAll('*')].forEach((el) => {
+    window.demo_log = (text) => document.getElementById('log').innerText = text;
+
+    [...document.getElementById('widgets').querySelectorAll('*')].forEach((el) => {
 
         if (!el.nodeName.startsWith('A-')) {
             return;
         }
 
-        const isChildOfDemo = el.parentNode.id == 'demo';
-        const demo = isChildOfDemo ? el.parentNode : el.parentNode.parentNode;
-        const beforeEl = isChildOfDemo ? el : el.parentNode;
+        const isChildOfWidgets = el.parentNode.id == 'widgets';
+        const widgets = isChildOfWidgets ? el.parentNode : el.parentNode.parentNode;
+        const insertPointElem = isChildOfWidgets ? el : el.parentNode;
 
         // Insert widget HTML after each widget
 
@@ -79,7 +79,7 @@
         elClone.removeAttribute('style');
         const preWithHtml = document.createElement('pre');
         preWithHtml.innerText = elClone.outerHTML;
-        demo.insertBefore(preWithHtml, beforeEl);
+        widgets.insertBefore(preWithHtml, insertPointElem);
 
         // Insert widget callback code after each widget
 
@@ -90,7 +90,7 @@
         if (listener in window) {
             const preWithJs = document.createElement('pre');
             preWithJs.innerText = window[listener];
-            demo.insertBefore(preWithJs, beforeEl);
+            widgets.insertBefore(preWithJs, insertPointElem);
         }
 
     });
@@ -107,26 +107,32 @@
 
       body {
         background: #000;
+        color: #fff;
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       hr {
         opacity: 0.25;
       }
 
-      #demo {
-        color: #fff;
+      #widgets {
         margin: 0 20px;
         font-family: sans-serif;
-        white-space: nowrap;
-        overflow: hidden;
-        user-select: none;
-        -webkit-user-select: none;
+      }
+
+      #log {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 2rem;
       }
 
       #resize-container {
         box-sizing: border-box; /* make <a-resize> behave in a predictable way */
         position: relative;     /* support <a-resize> position:absolute */; 
-        background: #888;
+        background: #555;
         width: 200px;
         height: 100px;
       }
