@@ -8,7 +8,8 @@ Audio Warpin' Web Widgets, a single file library of audio oriented widgets for u
 * Leverages [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) HTML standard
 * Touch and mouse friendly
 * SVG based, allows CSS styling
-* Minimalistic design, just some basic input method abstraction and a handful of (WIP) audio specific features
+* Event driven
+* Minimalistic design
 
 ### Example
 
