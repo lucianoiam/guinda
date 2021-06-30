@@ -53,9 +53,42 @@ class Widget extends HTMLElement {
 
     connectedCallback() {
         if (!this._instanceInitialized) {
-            this._instanceInit();
             this._instanceInitialized = true;
+            this._instanceInit();
         }
+    }
+
+    // Already existing opt values always take precedence over attributes
+
+    _setOptFromAttrBool(name, def) {
+        if ((this._opt[name] !== false) && (this._opt[name] !== true)) {
+            this._opt[name] = this._optAttr(name, 'false') == 'true';
+        }
+    }
+
+    _setOptFromAttrInt(name, def) {
+        if (!isFinite(this._opt[name])) {
+            const val = parseInt(this._optAttr(name, def));
+            this._opt[name] = !isNaN(val) ? val : def;
+        }
+    }
+
+    _setOptFromAttrFloat(name, def) {
+        if (!isFinite(this._opt[name])) {
+            const val = parseFloat(this._optAttr(name, def));
+           this._opt[name] = !isNaN(val) ? val : def;
+       }
+    }
+
+    _setOptFromAttrString(name, def) {
+        if (!(this._opt[name] instanceof String)) {
+            this._opt[name] = this._optAttr(name, def);
+        }
+    }
+
+    _optAttr(name, def) {
+        const attr = this.attributes.getNamedItem(name.toLowerCase());
+        return attr ? attr.value : def;
     }
 
     _instanceInit() {
@@ -76,6 +109,7 @@ class Widget extends HTMLElement {
         // There is no problem in setting attributes during super() though.
         //
     }
+
 }
 
 
@@ -115,9 +149,8 @@ class InputWidget extends Widget {
 
     constructor() {
         super();
-        this._value = 0;
-        
-        UnifiedTouchAndMouseControlTrait.apply(this);
+        this._value = null;  
+        ControlTrait.apply(this);
     }
 
 }
@@ -129,7 +162,9 @@ class InputWidget extends Widget {
 
 class ControlEvent extends UIEvent {}
 
-function UnifiedTouchAndMouseControlTrait() {
+// Merges touch and mouse input events into a single basic set of custom events
+
+function ControlTrait() {
 
     // Handle touch events preventing subsequent simulated mouse events
 
@@ -226,10 +261,8 @@ function UnifiedTouchAndMouseControlTrait() {
 
 function RangeTrait() {
 
-    // Do not assume this runs from a class constructor and keep existing opts
-
-    this.opt.minValue = 'minValue' in this.opt ? this.minValue : 0;
-    this.opt.maxValue = 'maxValue' in this.opt ? this.maxValue : 1.0;
+    this._setOptFromAttrFloat('minValue', 0);
+    this._setOptFromAttrFloat('maxValue', 1.0);
 
     const proto = this.constructor.prototype;
 
@@ -303,7 +336,7 @@ class ResizeHandle extends InputWidget {
     static _staticInit() {
         super._staticInit();
 
-        this._themeSvgData = Object.freeze({
+        this._svgData = Object.freeze({
             DOTS:
                `<svg viewBox="0 0 100 100">
                     <path d="M80.5,75.499c0,2.763-2.238,5.001-5,5.001c-2.761,0-5-2.238-5-5.001c0-2.759,2.239-4.999,5-4.999
@@ -327,22 +360,26 @@ class ResizeHandle extends InputWidget {
     _instanceInit() {
         super._instanceInit();
 
-        // Default minimum size is the current document size
-        this.opt.minWidth = this.opt.minWidth || this.parentNode.clientWidth;
-        this.opt.minHeight = this.opt.minHeight || this.parentNode.clientHeight;
+        // Default minimum size is the parent element or document body size
+        const parent = this.parentNode || document.body;
 
-        if (this.opt.maxScale) {
+        this._setOptFromAttrInt('minWidth', parent.clientWidth);
+        this._setOptFromAttrInt('minHeight', parent.clientHeight);
+
+        this._setOptFromAttrFloat('maxScale', 0);
+
+        if (this.opt.maxScale > 0) {
             // Set the maximum size to maxScale times the minimum size 
             this.opt.maxWidth = this.opt.maxScale * this.opt.minWidth;
             this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
         } else {
-            // Default maximum size is the device screen size
-            this.opt.maxWidth = this.opt.maxWidth || window.screen.width;
-            this.opt.maxHeight = this.opt.maxHeight || window.screen.height;
+            // Default maximum size is the parent element or document body size
+            this._setOptFromAttrInt('maxWidth', parent.clientWidth);
+            this._setOptFromAttrInt('maxHeight', parent.clientHeight);
         }
 
         // Keep aspect ratio while resizing, default to no
-        this.opt.keepAspectRatio = this.opt.keepAspectRatio || false;
+        this._setOptFromAttrBool('keepAspectRatio', false);
 
         // Initialize state
         this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
@@ -351,16 +388,15 @@ class ResizeHandle extends InputWidget {
         
         // No point in allowing CSS customizations for these
         this.style.position = 'absolute';
-        this.style.zIndex = '1000';
+        this.style.zIndex = '100';
         this.style.right = '0px';
         this.style.bottom = '0px';
-        this.style.width = '24px';
-        this.style.height = '24px';
-
-        const svgData = this.constructor._themeSvgData;
 
         // Configure graphic
-        switch (this.opt.theme || 'dots') {
+        this._setOptFromAttrString('graphic', 'lines');
+        const svgData = this.constructor._svgData;
+
+        switch (this.opt.graphic) {
             case 'dots':
                 this.innerHTML = svgData.DOTS;
                 break;

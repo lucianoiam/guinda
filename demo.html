@@ -21,27 +21,32 @@
 
         <h4>Knob</h4>
 
-        <!-- TODO: Allow to set range with min and max attributes -->
-        <a-knob oninput="demo_log(this.value.toFixed(2))"></a-knob>
+        <a-knob
+            minvalue="0"
+            maxvalue="2.0"
+            oninput="demo_log(this.value.toFixed(2))">
+        </a-knob>
 
         <hr>
+
         <h4>Resize Handle</h4>
 
         <div id="resize-container">
 
-            <a-resize oninput="aResizeListener.call(this)"></a-resize>
+            <a-resize
+                minwidth="200"
+                minheight="100"
+                maxscale="2"
+                keepaspectratio="true"
+                graphic="dots"
+                oninput="aResizeListener.call(this)">
+            </a-resize>
         
         </div>
 
     </div>
 
     <pre id="log"></pre>
-
-
-    <!-- TODO: remove this after allowing to configure the resize handle using attributes -->
-    <script>
-    document.querySelector('a-resize').opt = {minWidth: 100, minHeight: 100, maxWidth: 600, maxHeight: 300};
-    </script>
 
 
     <!-- Event listeners -->
@@ -92,14 +97,28 @@
       #resize-container {
         box-sizing: border-box; /* make <a-resize> behave in a predictable way */
         position: relative;     /* support <a-resize> position:absolute */; 
+        border-radius: 5px;
         background: #555;
-        width: 200px;
-        height: 100px;
+        width: 300px;
+        height: 150px;
       }
 
       a-knob {
-        width: 50px;
-        height: 50px;
+        width: 74px;
+        height: 74px;
+      }
+
+      a-resize {
+        width: 37px;
+        height: 37px;
+      }
+
+      a-resize path {
+        fill: #000;   /* dots version */
+      }
+
+      a-resize line {
+        stroke: #000; /* lines version */
       }
 
     </style>
@@ -108,37 +127,36 @@
 
     window.demo_log = (text) => document.getElementById('log').innerText = text;
 
-    [...document.getElementById('widgets').querySelectorAll('*')].forEach((el) => {
+    const widgets = [...document.getElementById('widgets').querySelectorAll('*')]
+                        .filter(el => el.nodeName.startsWith('A-'));
 
-        if (!el.nodeName.startsWith('A-')) {
-            return;
-        }
+    for (const widget of widgets) {
 
-        const isChildOfWidgets = el.parentNode.id == 'widgets';
-        const widgets = isChildOfWidgets ? el.parentNode : el.parentNode.parentNode;
-        const insertPointElem = isChildOfWidgets ? el : el.parentNode;
+        const isDirectChild = widget.parentNode.id == 'widgets';
+        const container = isDirectChild ? widget.parentNode : widget.parentNode.parentNode;
+        const insertPointElem = isDirectChild ? widget : widget.parentNode;
 
-        // Insert widget HTML after each widget
+        // Insert widget HTML before each widget
 
-        const elClone = el.cloneNode();
-        elClone.removeAttribute('style');
+        const widgetClone = widget.cloneNode();
+        widgetClone.removeAttribute('style');
         const preWithHtml = document.createElement('pre');
-        preWithHtml.innerText = elClone.outerHTML;
-        widgets.insertBefore(preWithHtml, insertPointElem);
+        preWithHtml.innerText = widgetClone.outerHTML;
+        container.insertBefore(preWithHtml, insertPointElem);
 
-        // Insert widget callback code after each widget
+        // Insert widget callback code before each widget
 
-        const listener = el.nodeName.split('-').map((s, i) => {
+        const listener = widget.nodeName.split('-').map((s, i) => {
             return i > 0 ? s[0] + s.slice(1).toLowerCase() : s[0].toLowerCase();
         }).join('') + 'Listener'; // <a-knob> -> aKnobListener
 
         if (listener in window) {
             const preWithJs = document.createElement('pre');
             preWithJs.innerText = window[listener];
-            widgets.insertBefore(preWithJs, insertPointElem);
+            container.insertBefore(preWithJs, insertPointElem);
         }
 
-    });
+    }
 
     </script>
 
