@@ -1,6 +1,6 @@
 # Awww
 
-Audio Warping Web Widgets, a single file library of audio oriented widgets for use in web views.
+Audio Warpin' Web Widgets, a single file library of audio oriented widgets for use in web views.
 
 ### Features
 
