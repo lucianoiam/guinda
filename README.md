@@ -13,7 +13,7 @@ Audio Warpin' Web Widgets, a single file library of audio oriented widgets for u
 
 ### Example
 
-Live demo [here](https://rawcdn.githack.com/lucianoiam/awww/master/demo.html)
+Live demo [here](https://raw.githack.com/lucianoiam/awww/master/demo.html)
 
 ```JavaScript
 const gain = document.createElement('a-knob');

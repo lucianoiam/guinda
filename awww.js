@@ -31,17 +31,7 @@ class Widget extends HTMLElement {
     }
 
     set opt(opt) {
-        this._opt = opt;
-    }
-
-    replaceTemplateById(id) {
-        const old = document.querySelector(`template[id=${id}]`);
-        old.parentNode.insertBefore(this, old);
-        old.parentNode.removeChild(old);
-        
-        this.id = id;
-        
-        return this;
+        Object.assign(this._opt, opt); // merge
     }
 
     /**
@@ -58,7 +48,7 @@ class Widget extends HTMLElement {
     
     constructor() {
         super();
-        this.opt = {};
+        this._opt = {};
     }
 
     connectedCallback() {
@@ -303,14 +293,6 @@ class SvgMath {
 class ResizeHandle extends InputWidget {
 
     /**
-     *  Public
-     */
-
-    appendToBody() {
-        document.body.appendChild(this);
-    }
-    
-    /**
      *  Internal
      */
 
@@ -346,8 +328,8 @@ class ResizeHandle extends InputWidget {
         super._instanceInit();
 
         // Default minimum size is the current document size
-        this.opt.minWidth = this.opt.minWidth || document.body.clientWidth;
-        this.opt.minHeight = this.opt.minHeight || document.body.clientHeight;
+        this.opt.minWidth = this.opt.minWidth || this.parentNode.clientWidth;
+        this.opt.minHeight = this.opt.minHeight || this.parentNode.clientHeight;
 
         if (this.opt.maxScale) {
             // Set the maximum size to maxScale times the minimum size 
@@ -359,8 +341,8 @@ class ResizeHandle extends InputWidget {
             this.opt.maxHeight = this.opt.maxHeight || window.screen.height;
         }
 
-        // Keep aspect ratio while resizing, default to yes
-        this.opt.keepAspectRatio = this.opt.keepAspectRatio === false ? false : true;
+        // Keep aspect ratio while resizing, default to no
+        this.opt.keepAspectRatio = this.opt.keepAspectRatio || false;
 
         // Initialize state
         this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
@@ -368,7 +350,7 @@ class ResizeHandle extends InputWidget {
         this._height = 0;
         
         // No point in allowing CSS customizations for these
-        this.style.position = 'fixed';
+        this.style.position = 'absolute';
         this.style.zIndex = '1000';
         this.style.right = '0px';
         this.style.bottom = '0px';
@@ -398,8 +380,8 @@ class ResizeHandle extends InputWidget {
      */
 
     _onGrab(ev) {
-        this._width = document.body.clientWidth;
-        this._height = document.body.clientHeight;
+        this._width = this.parentNode.clientWidth;
+        this._height = this.parentNode.clientHeight;
     }
 
     _onDrag(ev) {
@@ -422,8 +404,7 @@ class ResizeHandle extends InputWidget {
         if ((this._width != newWidth) || (this._height != newHeight)) {
             this._width = newWidth;
             this._height = newHeight;
-            const k = window.devicePixelRatio;
-            this.value = {width: k * this._width, height: k * this._height};
+            this.value = {width: this._width, height: this._height};
         }
     }
 

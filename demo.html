@@ -4,7 +4,6 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
     <title>Awww - Audio Warpin' Web Widgets</title>
     
     <script src="awww.js"></script>
@@ -20,20 +19,116 @@
           https://developers.google.com/web/fundamentals/web-components/customelements
         -->
 
-        <!-- TODO: Allow to set range with min and max attributes -->
-        <a-knob oninput="console.log(this.value)"></a-knob>
+        <h4>Knob</h4>
 
-        <!-- TODO: Allow the resize handle to be attached in custom places for demo purposes -->
-        <a-resize></a-resize>
+        <!-- TODO: Allow to set range with min and max attributes -->
+        <a-knob oninput="aKnobListener.call(this)"></a-knob>
+
+        <hr>
+        <h4>Resize Handle</h4>
+
+        <div id="resize-container">
+
+            <a-resize oninput="aResizeListener.call(this)"></a-resize>
+        
+        </div>
 
     </div>
 
-    <!-- Placing a stylesheet here is non-standard but works on most browsers.
-         It is done this way only to avoid polluting the top part of demo source.  -->
+
+    <!-- TODO: remove this after allowing to configure the resize handle using attributes -->
+    <script>
+    document.querySelector('a-resize').opt = {minWidth: 100, minHeight: 100, maxWidth: 600, maxHeight: 300};
+    </script>
+
+
+    <!-- Event listeners -->
+
+    <script>
+
+    function aKnobListener() {
+        console.log(this.value);
+    }
+
+    function aResizeListener(size) {
+        const style = this.parentNode.style;
+        style.width = this.value.width + 'px';
+        style.height = this.value.height + 'px';
+    }
+
+    </script>
+
+
+    <!-- Make it easy to update the demo  -->
+
+    <script>
+
+    [...document.getElementById('demo').querySelectorAll('*')].forEach((el) => {
+
+        if (!el.nodeName.startsWith('A-')) {
+            return;
+        }
+
+        const isChildOfDemo = el.parentNode.id == 'demo';
+        const demo = isChildOfDemo ? el.parentNode : el.parentNode.parentNode;
+        const beforeEl = isChildOfDemo ? el : el.parentNode;
+
+        // Insert widget HTML after each widget
+
+        const elClone = el.cloneNode();
+        elClone.removeAttribute('style');
+        const preWithHtml = document.createElement('pre');
+        preWithHtml.innerText = elClone.outerHTML;
+        demo.insertBefore(preWithHtml, beforeEl);
+
+        // Insert widget callback code after each widget
+
+        const listener = el.nodeName.split('-').map((s, i) => {
+            return i > 0 ? s[0] + s.slice(1).toLowerCase() : s[0].toLowerCase();
+        }).join('') + 'Listener'; // <a-knob> -> aKnobListener
+
+        if (listener in window) {
+            const preWithJs = document.createElement('pre');
+            preWithJs.innerText = window[listener];
+            demo.insertBefore(preWithJs, beforeEl);
+        }
+
+    });
+
+    </script>
+
+
+    <!--
+      Placing a stylesheet here is non-standard but works on most browsers.
+      It is done this way purely to avoid polluting the top part of demo source.
+     -->
+
     <style>
 
       body {
         background: #000;
+      }
+
+      hr {
+        opacity: 0.25;
+      }
+
+      #demo {
+        color: #fff;
+        margin: 0 20px;
+        font-family: sans-serif;
+        white-space: nowrap;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      #resize-container {
+        box-sizing: border-box; /* make <a-resize> behave in a predictable way */
+        position: relative;     /* support <a-resize> position:absolute */; 
+        background: #888;
+        width: 200px;
+        height: 100px;
       }
 
       a-knob {
