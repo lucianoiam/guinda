@@ -4,13 +4,36 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Awww - Audio Warpin' Web Widgets</title>
+
+    <title>Audio Warpin' Web Widgets</title>
     
     <script src="awww.js"></script>
+
+    <style>
+
+    a-knob {
+        width: 74px;
+        height: 74px;
+    }
+
+    a-resize {
+        width: 37px;
+        height: 37px;
+    }
+
+    a-resize path {
+        fill: #000;
+    }
+
+    </style>
 
   </head>
 
   <body>
+
+    <h2><a href="https://github.com/lucianoiam/awww" target="_blank">Awww</a></h2>
+
+    <hr>
 
     <div id="widgets">
 
@@ -24,7 +47,7 @@
         <a-knob
             minvalue="0"
             maxvalue="2.0"
-            oninput="demo_log(this.value.toFixed(2))">
+            oninput="toast(this.value.toFixed(2))">
         </a-knob>
 
         <hr>
@@ -57,7 +80,7 @@
         const style = this.parentNode.style;
         style.width = this.value.width + 'px';
         style.height = this.value.height + 'px';
-        demo_log(Math.round(this.value.width) + 'x' + Math.round(this.value.height));
+        toast(Math.round(this.value.width) + 'x' + Math.round(this.value.height));
     }
 
     </script>
@@ -65,71 +88,62 @@
 
     <!--
       Placing a stylesheet here is non-standard but works on most browsers.
-      It is done this way purely to avoid polluting the top part of demo source.
+      It is done this way purely for keeping the relevant demo parts on top.
      -->
 
     <style>
 
-      body {
+    body {
         background: #000;
         color: #fff;
+        font-family: sans-serif;
+        margin: 0 20px;
         user-select: none;
         -webkit-user-select: none;
-      }
+    }
 
-      pre {
+    a {
+        color: #fff;
+    }
+
+    pre {
         white-space: pre-wrap;
-      }
+    }
 
-      hr {
+    hr {
         opacity: 0.25;
-      }
+    }
 
-      #widgets {
-        margin: 0 20px;
-        font-family: sans-serif;
-      }
+    a-resize line {
+        stroke: #000; /* lines version */
+    }
 
-      #log {
+    #log {
+        background-color: rgba(0, 0, 0, 0.75);
         position: fixed;
-        bottom: 0;
-        width: 100%;
-        text-align: center;
-        font-size: 2rem;
-      }
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, 0);
+        height: 3rem;
+        font-size: 3rem;
+        padding: 10px;
+        margin: 0;
+        border-radius: 5px;
+        visibility: hidden;
+    }
 
-      #resize-container {
+    #resize-container {
         box-sizing: border-box; /* make <a-resize> behave in a predictable way */
         position: relative;     /* support <a-resize> position:absolute */; 
         border-radius: 5px;
         background: #555;
         width: 300px;
         height: 150px;
-      }
-
-      a-knob {
-        width: 74px;
-        height: 74px;
-      }
-
-      a-resize {
-        width: 37px;
-        height: 37px;
-      }
-
-      a-resize path {
-        fill: #000;   /* dots version */
-      }
-
-      a-resize line {
-        stroke: #000; /* lines version */
-      }
+    }
 
     </style>
 
     <script>
-
-    window.demo_log = (text) => document.getElementById('log').innerText = text;
 
     const widgets = [...document.getElementById('widgets').querySelectorAll('*')]
                         .filter(el => el.nodeName.startsWith('A-'));
@@ -162,8 +176,22 @@
 
     }
 
-    </script>
+    let toastTimeout = null;
 
+    function toast(text) {
+        if (toastTimeout) {
+            clearTimeout(toastTimeout);
+        }
+
+        const log = document.getElementById('log');
+
+        log.innerText = text;
+        log.style.visibility = 'visible';
+        
+        toastTimeout = setTimeout(() => log.style.visibility = 'hidden', 1000);
+    }
+
+    </script>
 
   </body>
 
