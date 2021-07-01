@@ -26,7 +26,21 @@ class Widget extends HTMLElement {
      *  Public
      */
 
+    static define() {
+        this._staticInit();
+        window.customElements.define(`a-${this._unqualifiedNodeName}`, this);
+    }
+
     get opt() {
+        // Allow to set options without requiring to first create the options
+        // object itself, like this:
+        //   const elem = document.createElement('a-elem');
+        //   elem.opt.some = 1;
+
+        if (!this._opt) {
+            this._opt = function() {}; // return a reference
+        }
+
         return this._opt;
     }
 
@@ -43,12 +57,7 @@ class Widget extends HTMLElement {
     }
 
     static _staticInit() {
-        window.customElements.define(`a-${this._unqualifiedNodeName}`, this);
-    }
-    
-    constructor() {
-        super();
-        this._opt = {};
+        // default empty implementation
     }
 
     connectedCallback() {
@@ -85,28 +94,28 @@ class Widget extends HTMLElement {
     // Already existing opt values always take precedence over attributes
 
     _optAttrBool(key, def, attrName) {
-        if ((this._opt[key] !== false) && (this._opt[key] !== true)) {
-            this._opt[key] = this._optAttr(key, 'false', attrName) == 'true';
+        if ((this.opt[key] !== false) && (this.opt[key] !== true)) {
+            this.opt[key] = this._optAttr(key, 'false', attrName) == 'true';
         }
     }
 
     _optAttrInt(key, def, attrName) {
-        if (!isFinite(this._opt[key])) {
+        if (!isFinite(this.opt[key])) {
             const val = parseInt(this._optAttr(key, def, attrName));
-            this._opt[key] = !isNaN(val) ? val : def;
+            this.opt[key] = !isNaN(val) ? val : def;
         }
     }
 
     _optAttrFloat(key, def, attrName) {
-        if (!isFinite(this._opt[key])) {
+        if (!isFinite(this.opt[key])) {
             const val = parseFloat(this._optAttr(key, def, attrName));
-            this._opt[key] = !isNaN(val) ? val : def;
+            this.opt[key] = !isNaN(val) ? val : def;
        }
     }
 
     _optAttrString(key, def, attrName) {
-        if (!(this._opt[key] instanceof String)) {
-            this._opt[key] = this._optAttr(key, def, attrName);
+        if (!(this.opt[key] instanceof String)) {
+            this.opt[key] = this._optAttr(key, def, attrName);
         }
     }
 
@@ -343,8 +352,6 @@ class ResizeHandle extends InputWidget {
     }
 
     static _staticInit() {
-        super._staticInit();
-
         this._svgData = Object.freeze({
             DOTS:
                `<svg viewBox="0 0 100 100">
@@ -466,8 +473,6 @@ class Knob extends InputWidget {
     }
 
     static _staticInit() {
-        super._staticInit();
-
         this._trackStartAngle = -135;
         this._trackEndAngle   =  135;
 
@@ -548,5 +553,5 @@ class Knob extends InputWidget {
  */
 
 {
-    [ResizeHandle, Knob].forEach((cls) => cls._staticInit());
+    [ResizeHandle, Knob].forEach((cls) => cls.define());
 }
