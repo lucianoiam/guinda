@@ -96,6 +96,8 @@ class Widget extends HTMLElement {
         if ((this.opt[key] !== false) && (this.opt[key] !== true)) {
             this.opt[key] = this._optAttr(key, 'false', attrName) == 'true';
         }
+
+        return this.opt[key];
     }
 
     _optAttrInt(key, def, attrName) {
@@ -103,6 +105,8 @@ class Widget extends HTMLElement {
             const val = parseInt(this._optAttr(key, def, attrName));
             this.opt[key] = !isNaN(val) ? val : def;
         }
+
+        return this.opt[key];
     }
 
     _optAttrFloat(key, def, attrName) {
@@ -110,12 +114,16 @@ class Widget extends HTMLElement {
             const val = parseFloat(this._optAttr(key, def, attrName));
             this.opt[key] = !isNaN(val) ? val : def;
        }
+
+       return this.opt[key];
     }
 
     _optAttrString(key, def, attrName) {
         if (!(this.opt[key] instanceof String)) {
             this.opt[key] = this._optAttr(key, def, attrName);
         }
+
+        return this.opt[key];
     }
 
     /**
@@ -498,6 +506,8 @@ class Knob extends InputWidget {
 
         this.addEventListener('controlstart', this._onGrab);
         this.addEventListener('controlcontinue', this._onMove);
+
+        this.value = this._optAttrFloat('value', 0); // initial value
     }
 
     /**
