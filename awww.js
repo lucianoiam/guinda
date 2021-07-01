@@ -71,11 +71,11 @@ class Widget extends HTMLElement {
         //
         // [NotSupportedError: A newly constructed custom element must not have attributes
         //
-        // To avoid the error a custom _init() is implemented that gets
-        // called when the runtime calls this.connectedCallback(), because
-        // concrete classes [ the ones whose instances are ultimately created by
-        // calling document.createElementById() ] must not set attributes in the
-        // constructor body, like this:
+        // To avoid the error a custom _init() is implemented that gets called
+        // when the runtime calls this.connectedCallback(), because concrete
+        // classes [ the ones whose instances are ultimately created by calling
+        // document.createElementById() ] must not set attributes in the
+        // constructor body like in this example:
         //
         // constructor() {
         //    super();
