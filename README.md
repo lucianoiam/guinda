@@ -15,19 +15,35 @@ Audio Warpin' Web Widgets, a single file library of audio oriented widgets for u
 
 Live demo [here](https://raw.githack.com/lucianoiam/awww/master/demo.html)
 
+Pure HTML:
+
+```HTML
+<body>
+
+   <a-knob
+      min="0"
+      max="1"
+      oninput="`The new knob value is ${this.value}`">
+   <a-knob>
+
+</body>
+```
+
+Programmatically:
+
 ```JavaScript
-const gain = document.createElement('a-knob');
+const knob = document.createElement('a-knob');
 
-gain.opt.minValue = 0;
-gain.opt.maxValue = 1;
+knob.opt.min = 0;
+knob.opt.max = 1;
 
-document.body.addChild(gain);
+knob.addEventListener('input', (ev) => {
 
-gain.addEventListener('input', (ev) => {
-
-    console.log(`The new gain knob value is ${ev.target.value}`);
+    console.log(`The new knob value is ${ev.target.value}`);
 
 });
+
+document.body.addChild(knob);
 ```
 
 Originally created for building the user interface of [Castello Reverb](https://github.com/lucianoiam/castello-rev) VST/LV2 desktop plugin (WIP)
