@@ -60,29 +60,29 @@ class Widget extends HTMLElement {
 
     // Already existing opt values always take precedence over attributes
 
-    _setOptFromAttrBool(name, def) {
-        if ((this._opt[name] !== false) && (this._opt[name] !== true)) {
-            this._opt[name] = this._optAttr(name, 'false') == 'true';
+    _setOptFromAttrBool(optName, attrName, def) {
+        if ((this._opt[optName] !== false) && (this._opt[optName] !== true)) {
+            this._opt[optName] = this._optAttr(attrName, 'false') == 'true';
         }
     }
 
-    _setOptFromAttrInt(name, def) {
-        if (!isFinite(this._opt[name])) {
-            const val = parseInt(this._optAttr(name, def));
-            this._opt[name] = !isNaN(val) ? val : def;
+    _setOptFromAttrInt(optName, attrName, def) {
+        if (!isFinite(this._opt[optName])) {
+            const val = parseInt(this._optAttr(attrName, def));
+            this._opt[optName] = !isNaN(val) ? val : def;
         }
     }
 
-    _setOptFromAttrFloat(name, def) {
-        if (!isFinite(this._opt[name])) {
-            const val = parseFloat(this._optAttr(name, def));
-           this._opt[name] = !isNaN(val) ? val : def;
+    _setOptFromAttrFloat(optName, attrName, def) {
+        if (!isFinite(this._opt[optName])) {
+            const val = parseFloat(this._optAttr(attrName, def));
+           this._opt[optName] = !isNaN(val) ? val : def;
        }
     }
 
-    _setOptFromAttrString(name, def) {
-        if (!(this._opt[name] instanceof String)) {
-            this._opt[name] = this._optAttr(name, def);
+    _setOptFromAttrString(optName, attrName, def) {
+        if (!(this._opt[optName] instanceof String)) {
+            this._opt[optName] = this._optAttr(attrName, def);
         }
     }
 
@@ -266,8 +266,8 @@ function ControlTrait() {
 
 function RangeTrait() {
 
-    this._setOptFromAttrFloat('minValue', 0);
-    this._setOptFromAttrFloat('maxValue', 1.0);
+    this._setOptFromAttrFloat('minValue', 'min', 0);
+    this._setOptFromAttrFloat('maxValue', 'max', 1.0);
 
     const proto = this.constructor.prototype;
 
@@ -368,10 +368,10 @@ class ResizeHandle extends InputWidget {
         // Default minimum size is the parent element or document body size
         const parent = this.parentNode || document.body;
 
-        this._setOptFromAttrInt('minWidth', parent.clientWidth);
-        this._setOptFromAttrInt('minHeight', parent.clientHeight);
+        this._setOptFromAttrInt('minWidth', 'minwidth', parent.clientWidth);
+        this._setOptFromAttrInt('minHeight', 'minheight', parent.clientHeight);
 
-        this._setOptFromAttrFloat('maxScale', 0);
+        this._setOptFromAttrFloat('maxScale', 'maxscale', 0);
 
         if (this.opt.maxScale > 0) {
             // Set the maximum size to maxScale times the minimum size 
@@ -379,12 +379,12 @@ class ResizeHandle extends InputWidget {
             this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
         } else {
             // Default maximum size is the parent element or document body size
-            this._setOptFromAttrInt('maxWidth', parent.clientWidth);
-            this._setOptFromAttrInt('maxHeight', parent.clientHeight);
+            this._setOptFromAttrInt('maxWidth', 'maxwidth', parent.clientWidth);
+            this._setOptFromAttrInt('maxHeight', 'maxheight', parent.clientHeight);
         }
 
         // Keep aspect ratio while resizing, default to no
-        this._setOptFromAttrBool('keepAspectRatio', false);
+        this._setOptFromAttrBool('keepAspectRatio', 'keepaspectratio', false);
 
         // Initialize state
         this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
