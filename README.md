@@ -34,8 +34,6 @@ Pure HTML:
 Programmatically:
 
 ```JavaScript
-import Knob from './awww-module.js';  // TODO: does not exist yet
-
 const knob = document.createElement('a-knob');
 
 knob.opt.min = 0;
@@ -48,6 +46,17 @@ knob.addEventListener('input', (ev) => {
 });
 
 document.body.addChild(knob);
+```
+
+Using `new` operator:
+
+```JavaScript
+// TODO: ES6 module does not exist yet
+
+import Knob from './awww-module.js';
+
+const knob = new Knob();
+
 ```
 
 Originally created for building the user interface of [Castello Reverb](https://github.com/lucianoiam/castello-rev) VST/LV2 desktop plugin (WIP)
