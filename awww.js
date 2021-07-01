@@ -123,7 +123,7 @@ class Widget extends HTMLElement {
 
 
 /**
- *  Base class for stateful input widgets
+ *  Base class for widgets that accept and store a value
  */
 
 class InputWidget extends Widget {
@@ -369,22 +369,22 @@ class ResizeHandle extends InputWidget {
     _instanceInit() {
         super._instanceInit();
 
-        // Default minimum size is the parent element size
-        const parent = this.parentNode;
+        // Default minimum and maximum size is the parent element size
+        const defWidth = this.parentNode.clientWidth;
+        const defHeight = this.parentNode.clientHeight;
 
-        this._optAttrInt('minWidth', parent.clientWidth);
-        this._optAttrInt('minHeight', parent.clientHeight);
+        this._optAttrInt('minWidth', defWidth);
+        this._optAttrInt('minHeight', defHeight);
 
         this._optAttrFloat('maxScale', 0);
 
+        // Setting maxScale overrides maxWidth and maxHeight
         if (this.opt.maxScale > 0) {
-            // Set the maximum size to maxScale times the minimum size 
             this.opt.maxWidth = this.opt.maxScale * this.opt.minWidth;
             this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
         } else {
-            // Default maximum size is the parent element or document body size
-            this._optAttrInt('maxWidth', parent.clientWidth);
-            this._optAttrInt('maxHeight', parent.clientHeight);
+            this._optAttrInt('maxWidth', defWidth);
+            this._optAttrInt('maxHeight', defHeight);
         }
 
         // Keep aspect ratio while resizing, default to no
@@ -430,8 +430,8 @@ class ResizeHandle extends InputWidget {
     }
 
     _onDrag(ev) {
-        // FIXME: On Windows, touchmove events stop triggering after calling callback,
-        //        which in turn calls DistrhoUI::setSize(). Mouse resizing works OK.
+        // Note: On Windows touchmove events stop triggering if the window size is
+        //       modified while the listener runs. Does not happen with mousemove.
         let newWidth = this._width + ev.movementX;
         newWidth = Math.max(this.opt.minWidth, Math.min(this.opt.maxWidth, newWidth));
 
