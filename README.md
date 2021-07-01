@@ -48,15 +48,14 @@ knob.addEventListener('input', (ev) => {
 document.body.addChild(knob);
 ```
 
-Using `new` operator:
+Using the `new` operator allows to pass options at instantiation time:
 
 ```JavaScript
 // TODO: ES6 module does not exist yet
 
 import Knob from './awww-module.js';
 
-const knob = new Knob();
-
+const knob = new Knob({min: 0, max: 1});
 ```
 
 Originally created for building the user interface of [Castello Reverb](https://github.com/lucianoiam/castello-rev) VST/LV2 desktop plugin (WIP)

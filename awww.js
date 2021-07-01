@@ -32,15 +32,6 @@ class Widget extends HTMLElement {
     }
 
     get opt() {
-        // Allow to set options without requiring to first create the options
-        // object itself, like this:
-        //   const elem = document.createElement('a-elem');
-        //   elem.opt.some = 1;
-
-        if (!this._opt) {
-            this._opt = function() {}; // return a reference
-        }
-
         return this._opt;
     }
 
@@ -60,6 +51,11 @@ class Widget extends HTMLElement {
         // default empty implementation
     }
 
+    constructor(opt) {
+        super();
+        this._opt = opt || {};
+    }
+
     connectedCallback() {
         if (!this._initialized) {
             this._initialized = true;
@@ -69,20 +65,23 @@ class Widget extends HTMLElement {
 
     _init() {
         //
-        // [NotSupportedError: A newly constructed custom element must not have attributes
-        //
-        // To avoid the error a custom _init() is implemented that gets called
-        // when the runtime calls this.connectedCallback(), because concrete
-        // classes [ the ones whose instances are ultimately created by calling
-        // document.createElementById() ] must not set attributes in the
-        // constructor body like in this example:
+        // Concrete classes, ie. the ones that are ultimately instantiated by
+        // calling document.createElement() or using the new operator, cannot
+        // set properties within their constructor bodies like in this example:
         //
         // constructor() {
         //    super();
         //    this._foo = {};
         // }
+        // 
+        // Doing so results in a runtime error by design:
+        // [NotSupportedError: A newly constructed custom element must not have attributes
         //
-        // There is no problem in setting attributes during super() though.
+        // To avoid the above arror and still enable concrete classes to perform
+        // instance initialization, a custom _init() is implemented that gets
+        // called whenever the runtime calls this.connectedCallback() on the
+        // instance. Setting properties during super(), ie. within the abstract
+        // classes constructors is permitted though.
         //
     }
 
@@ -165,8 +164,8 @@ class InputWidget extends Widget {
      *  Internal
      */
 
-    constructor() {
-        super();
+    constructor(opt) {
+        super(opt);
         this._value = null;  
         ControlTrait.apply(this);
     }
