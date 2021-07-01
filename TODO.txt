@@ -1,3 +1,4 @@
+- Support initial value in a-knob and update demo
 - Can pass opt object to ctor? like this: new Knob({min: 0, max: 1})
 - Allow to set widget options updating widget.opt at any time
 - Allow to set widget options updating node attributes at any time
