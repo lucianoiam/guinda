@@ -26,12 +26,16 @@ Pure HTML:
       oninput="`The new knob value is ${this.value}`">
    <a-knob>
 
+   <script src="awww.js"></script>
+
 </body>
 ```
 
 Programmatically:
 
 ```JavaScript
+import Knob from './awww-module.js';  // TODO: does not exist yet
+
 const knob = document.createElement('a-knob');
 
 knob.opt.min = 0;

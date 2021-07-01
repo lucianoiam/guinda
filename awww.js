@@ -20,7 +20,7 @@
   *  Base class for all widgets
   */
 
-class Widget extends HTMLElement {
+export class Widget extends HTMLElement {
 
     /**
      *  Public

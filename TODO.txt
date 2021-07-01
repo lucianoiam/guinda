@@ -1,2 +1,3 @@
 - Allow to set widget options updating widget.opt at any time
 - Allow to set widget options updating node attributes at any time
+- Create awww-module.js for allowing inclusion as ES6 module
