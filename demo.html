@@ -33,6 +33,7 @@
   <body>
 
     <h2><a href="https://github.com/lucianoiam/awww" target="_blank">Awww</a></h2>
+    <span id="watermark">ALPHA</span>
 
     <hr>
 
@@ -118,6 +119,13 @@
 
     a-resize line {
         stroke: #000; /* lines version */
+    }
+
+    #watermark {
+        position: fixed;
+        top: 25px;
+        right: 25px;
+        opacity: 0.5;
     }
 
     #log {
