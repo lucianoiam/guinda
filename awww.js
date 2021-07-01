@@ -58,8 +58,8 @@ class Widget extends HTMLElement {
 
     connectedCallback() {
         if (!this._initialized) {
-            this._initialized = true;
             this._init();
+            this._initialized = true;
         }
     }
 
@@ -163,9 +163,7 @@ class InputWidget extends Widget {
         // value will result in an input event being dispatched.
         // HTMLInputElement type=range triggers Event, type=text -> InputEvent.
 
-        const ev = new Event('input');
-        ev.value = this._value;
-        this.dispatchEvent(ev);
+        this._dispatchInputEvent();
     }
 
     /**
@@ -176,6 +174,19 @@ class InputWidget extends Widget {
         super(opt);
         this._value = null;  
         ControlTrait.apply(this);
+    }
+
+    _dispatchInputEvent() {
+        // Check if the instance is initialized before attempting to dispatch
+        // input events otherwise the input listener will be undefined when
+        // setting both 'oninput' and 'value' attributes in HTML:
+        // <a-elem value="foo" oninput="someStillUndefinedFunction()"></a-elem>
+
+        if (this._initialized) {
+            const ev = new Event('input');
+            ev.value = this._value;
+            this.dispatchEvent(ev);
+        }
     }
 
 }
@@ -508,6 +519,8 @@ class Knob extends InputWidget {
         this.addEventListener('controlcontinue', this._onMove);
 
         this.value = this._optAttrFloat('value', 0); // initial value
+
+        this._redraw(); // no input events are generated during _init()
     }
 
     /**
