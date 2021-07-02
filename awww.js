@@ -39,6 +39,8 @@ class Widget extends HTMLElement {
 
         let updating = false; // avoid recursion below
 
+        // Listen to opt changes
+
         this._opt = new Proxy(opt || {}, {
             set: (obj, prop, value) => {
                 obj[prop] = value;
@@ -52,6 +54,15 @@ class Widget extends HTMLElement {
                 return true;
             }
         });
+
+        // Listen to style changes. Unfortunately this does not work for custom
+        // style properties. Leaving commented code as a reminder.
+
+        /*const observer = new MutationObserver((mutations) => {
+            this._styleUpdated();
+        });
+
+        observer.observe(this, {attributes: true, attributeOldValue: true, attributeFilter: ['style']});*/
     }
 
     get opt() {
@@ -74,6 +85,9 @@ class Widget extends HTMLElement {
         const desc = This._attrOptDescriptor.find(d => name == (d.attrName ?? d.key.toLowerCase()));
 
         if (desc) {
+            // 1. Try to parse attribute and set opt value
+            // 2. Keep existing opt value if not null or undefined
+            // 3. Set opt to default value in descriptor
             const attrVal = this._attr(desc.attrName ?? desc.key.toLowerCase());
             this.opt[desc.key] = desc.parser(attrVal) ?? this.opt[desc.key] ?? desc.def;
         }
@@ -122,14 +136,14 @@ class Widget extends HTMLElement {
         //
     }
 
+    _attr(name, def) {
+        const attr = this.attributes.getNamedItem(name);
+        return attr ? attr.value : def;
+    }
+
     _styleProp(name, def) {
         const prop = getComputedStyle(this).getPropertyValue(name).trim();
         return prop.length > 0 ? prop : def;
-    }
-
-    _attr(attrName, def) {
-        const attr = this.attributes.getNamedItem(attrName);
-        return attr ? attr.value : def;
     }
 
     _optionUpdated(key, value) {
@@ -475,13 +489,10 @@ class ResizeHandle extends InputWidget {
         this._width = 0;
         this._height = 0;
 
-        // No point in allowing CSS customizations for these
         this.style.position = 'absolute';
         this.style.zIndex = '100';
         this.style.right = '0px';
         this.style.bottom = '0px';
-
-        // Configure graphic
 
         const svgData = this.constructor._svgData;
 
