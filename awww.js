@@ -165,6 +165,10 @@ class InputWidget extends Widget {
 
     set value(newValue) {
         this._value = newValue;
+
+        if (this._valueUpdated) {
+            this._valueUpdated(this.value);
+        }
     }
 
     /**
@@ -210,10 +214,6 @@ class RangeInputWidget extends InputWidget {
 
     set value(newValue) {
         super.value = this._clamp(newValue);
-
-        if (this._valueUpdated) {
-            this._valueUpdated(this.value);
-        }
     }
 
     /**
@@ -405,6 +405,15 @@ class SvgMath {
 
 class ResizeHandle extends InputWidget {
 
+    static get observedAttributes() {
+        return super.observedAttributes.concat(['minwidth', 'minheight',
+            'maxwidth', 'maxheight', 'maxscale', 'keepaspectratio']);
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        this._readAttrOptLimits();
+    }
+
     /**
      *  Internal
      */
@@ -438,32 +447,11 @@ class ResizeHandle extends InputWidget {
     _init() {
         super._init();
 
-        // Default minimum and maximum size is the parent element size
-        const defWidth = this.parentNode.clientWidth;
-        const defHeight = this.parentNode.clientHeight;
-
-        this._readAttrOpt(this._attrInt, defWidth, 'minWidth');
-        this._readAttrOpt(this._attrInt, defHeight, 'minHeight');
-
-        this._readAttrOpt(this._attrFloat, 0, 'maxScale');
-
-        // Setting maxScale overrides maxWidth and maxHeight
-        if (this.opt.maxScale > 0) {
-            this.opt.maxWidth = this.opt.maxScale * this.opt.minWidth;
-            this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
-        } else {
-            this._readAttrOpt(this._attrInt, defWidth, 'maxWidth');
-            this._readAttrOpt(this._attrInt, defHeight, 'maxHeight');
-        }
-
-        // Keep aspect ratio while resizing, default to no
-        this._readAttrOpt(this._attrBool, false, 'keepAspectRatio');
-
-        // Initialize state
-        this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
         this._width = 0;
         this._height = 0;
         
+        this._readAttrOptLimits();
+
         // No point in allowing CSS customizations for these
         this.style.position = 'absolute';
         this.style.zIndex = '100';
@@ -489,9 +477,43 @@ class ResizeHandle extends InputWidget {
         this.addEventListener('controlcontinue', this._onDrag);
     }
 
+    /*_optionChanged() {
+        this._readAttrOptLimits();
+    }*/
+
     /**
      *  Private
      */
+
+    _readAttrOptLimits() {
+        if (!this.parentNode) {
+            return;
+        }
+        
+        // Default minimum and maximum size is the parent element size
+        const defWidth = this.parentNode.clientWidth;
+        const defHeight = this.parentNode.clientHeight;
+
+        this._readAttrOpt(this._attrInt, defWidth, 'minWidth');
+        this._readAttrOpt(this._attrInt, defHeight, 'minHeight');
+
+        this._readAttrOpt(this._attrFloat, 0, 'maxScale');
+
+        // Setting maxScale overrides maxWidth and maxHeight
+        if (this.opt.maxScale > 0) {
+            this.opt.maxWidth = this.opt.maxScale * this.opt.minWidth;
+            this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
+        } else {
+            this._readAttrOpt(this._attrInt, defWidth, 'maxWidth');
+            this._readAttrOpt(this._attrInt, defHeight, 'maxHeight');
+        }
+
+        // Keep aspect ratio while resizing, default to no
+        this._readAttrOpt(this._attrBool, false, 'keepAspectRatio');
+
+        // Initialize state
+        this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
+    }
 
     _onGrab(ev) {
         this._width = this.parentNode.clientWidth;
