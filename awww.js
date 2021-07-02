@@ -63,6 +63,14 @@ class Widget extends HTMLElement {
         });
 
         observer.observe(this, {attributes: true, attributeOldValue: true, attributeFilter: ['style']});*/
+
+        // Set defaults
+
+        for (const desc of this.constructor._attrOptDescriptor) {
+            if (!(desc.key in this.opt) && (typeof(desc.def) !== 'undefined')) {
+                this.opt[desc.key] = desc.def;
+            }
+        }
     }
 
     get opt() {
@@ -85,11 +93,12 @@ class Widget extends HTMLElement {
         const desc = This._attrOptDescriptor.find(d => name == (d.attrName ?? d.key.toLowerCase()));
 
         if (desc) {
-            // 1. Try to parse attribute and set opt value
-            // 2. Keep existing opt value if not null or undefined
-            // 3. Set opt to default value in descriptor
             const attrVal = this._attr(desc.attrName ?? desc.key.toLowerCase());
-            this.opt[desc.key] = desc.parser(attrVal) ?? this.opt[desc.key] ?? desc.def;
+            const val = desc.parser(attrVal);
+            
+            if (typeof(val) !== 'undefined') {
+                this.opt[desc.key] = val;
+            }
         }
     }
 
