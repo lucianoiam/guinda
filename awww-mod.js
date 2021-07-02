@@ -40,6 +40,6 @@ export default await (async () => {
     ResizeHandle = null;
     Knob = null;
 
-    return Object.freeze(lib);
+    return lib;
 
 }) ();
