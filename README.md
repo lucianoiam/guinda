@@ -54,7 +54,7 @@ Options can be passed at instantiation time using the `new` operator:
 const knob = new Knob({min: 0, max: 1});
 ```
 
-Options can be be updated at any time:
+Options can be also updated any time after instantiation:
 
 ```JavaScript
 const knob = new Knob();
@@ -65,8 +65,8 @@ knob.setAttribute('max', 1.0);
 
 ```
 
-It can be also imported as a module. Note that the module version is just a shim
-that loads the regular version and exports its classes. It makes use of the
+The library can be imported as a module. Note that the module version is just a
+shim that loads the regular version and exports its classes. It makes use of the
 `export default await` construct which works on Firefox and Chrome but does not
 seem to work on Safari as of Jul '21.
 ```JavaScript
