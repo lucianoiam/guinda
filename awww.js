@@ -95,7 +95,7 @@ class Widget extends HTMLElement {
         if (desc) {
             const attrVal = this._attr(desc.attrName ?? desc.key.toLowerCase());
             const val = desc.parser(attrVal);
-            
+
             if (typeof(val) !== 'undefined') {
                 this.opt[desc.key] = val;
             }
@@ -195,14 +195,20 @@ class InputWidget extends Widget {
      *  Internal
      */
 
-    _valueUpdated(value) {
-        // Default empty implementation
-    }
+    _setValueAndDispatch(newValue) {
+        if (this._value == newValue) {
+            return;
+        }
 
-    _dispatchInputEvent() {
+        this.value = newValue;
+
         const ev = new Event('input');
         ev.value = this._value;
         this.dispatchEvent(ev);
+    }
+
+    _valueUpdated(value) {
+        // Default empty implementation
     }
 
 }
@@ -558,9 +564,11 @@ class ResizeHandle extends InputWidget {
         if ((this._width != newWidth) || (this._height != newHeight)) {
             this._width = newWidth;
             this._height = newHeight;
-            this.value = {width: this._width, height: this._height};
 
-            this._dispatchInputEvent();
+            this._setValueAndDispatch({
+                width: this._width,
+                height: this._height
+            });
         }
     }
 
@@ -650,9 +658,7 @@ class Knob extends RangeInputWidget {
             dv = this._range() * this._dragDistance / this.clientHeight;
         }
 
-        this.value = this._clamp(this._startValue + dv);
-
-        this._dispatchInputEvent();
+        this._setValueAndDispatch(this._clamp(this._startValue + dv));
     }
 
 }
