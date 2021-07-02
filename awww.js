@@ -33,7 +33,18 @@ class Widget extends HTMLElement {
 
     constructor(opt) {
         super();
-        this._opt = opt || {};
+
+        this._opt = new Proxy(opt || {}, {
+            set: (obj, prop, value) => {
+                obj[prop] = value;
+
+                if (this._optionChanged) {
+                    this._optionChanged(prop, value);
+                }
+
+                return true;
+            }
+        });
     }
 
     get opt() {
@@ -51,16 +62,12 @@ class Widget extends HTMLElement {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (this._initialized) {
-            this._attributeChanged(name, oldValue, newValue);
-        }
+        // Class is returning non-empty observedAttributes and attribute changed
+        throw new TypeError('attributeChangedCallback() not implemented');
     }
 
     connectedCallback() {
-        if (!this._initialized) {
-            this._init();
-            this._initialized = true;
-        }
+        this._init();
     }
 
     /**
@@ -73,11 +80,6 @@ class Widget extends HTMLElement {
 
     static _init() {
         // default empty implementation
-    }
-
-    _attributeChanged(name, oldValue, newValue) {
-        // Class is returning non-empty observedAttributes and attribute changed
-        throw new TypeError('_attributeChanged() not implemented');
     }
 
     _init() {
@@ -192,6 +194,16 @@ class RangeInputWidget extends InputWidget {
         return super.observedAttributes.concat(['min', 'max']);
     }
 
+    attributeChangedCallback(name, oldValue, newValue) {
+        this._readAttrOptRange();
+
+        this.value = this.value; // clamp in case range changed
+
+        if (name == 'value') {
+            this._readAttrValue();
+        }
+    }
+
     get value() {
         return super.value; // overriding setter requires overriding getter
     }
@@ -213,14 +225,6 @@ class RangeInputWidget extends InputWidget {
         this._readAttrOptRange();
     }
 
-    _attributeChanged(name, oldValue, newValue) {
-        this._readAttrOptRange();
-
-        if (name == 'value') {
-            this._readAttrValue();
-        }
-    }
-
     _range() {
         return this.opt.maxValue - this.opt.minValue;
     }
@@ -237,6 +241,10 @@ class RangeInputWidget extends InputWidget {
         return this.opt.minValue + value * this._range();
     }
 
+    _optionChanged(prop, value) {
+        this.value = this.value; // clamp in case range was updated
+    }
+    
     _readAttrValue() {
         this.value = this._attrFloat('value');
     }
@@ -557,12 +565,17 @@ class Knob extends RangeInputWidget {
     }
 
     _valueUpdated() {
+        const knobValue = this.querySelector('.knob-value');
+
+        if (!knobValue) {
+            return;
+        }
+
         const This = this.constructor;
         const range = Math.abs(This._trackStartAngle) + Math.abs(This._trackEndAngle);
         const endAngle = This._trackStartAngle + range * this._normalize(this.value);
         const d = SvgMath.describeArc(150, 150, 100, This._trackStartAngle, endAngle);
-
-        this.querySelector('.knob-value').setAttribute('d', d);
+        knobValue.setAttribute('d', d);
     }
 
     /**

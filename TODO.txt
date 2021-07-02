@@ -1,1 +1,0 @@
-- Allow to set widget options updating widget.opt at any time
