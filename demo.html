@@ -156,6 +156,10 @@
 
     <script>
 
+    let toastTimeout = null;
+
+       // document.querySelector('a-knob').setAttribute('min', '1.0');
+
     const cssRuleList = document.styleSheets[0].cssRules;
 
     const widgets = [...document.getElementById('widgets').querySelectorAll('*')]
@@ -201,7 +205,15 @@
 
     }
 
-    let toastTimeout = null;
+    function formatBlock(block) {
+        const lines = block.split('\n');
+        if (lines.length < 2) {
+            return lines;
+        } 
+        return lines[0] + '\n'
+                + lines.slice(1, lines.length - 1).map(l => '   ' + l.trim()).join('\n') + '\n'
+                + lines.slice(-1)[0].trim();
+    }
 
     function toast(text) {
         if (toastTimeout) {
@@ -214,16 +226,6 @@
         log.style.visibility = 'visible';
         
         toastTimeout = setTimeout(() => log.style.visibility = 'hidden', 1000);
-    }
-
-    function formatBlock(block) {
-        const lines = block.split('\n');
-        if (lines.length < 2) {
-            return lines;
-        } 
-        return lines[0] + '\n'
-                + lines.slice(1, lines.length - 1).map(l => '   ' + l.trim()).join('\n') + '\n'
-                + lines.slice(-1)[0].trim();
     }
 
     </script>

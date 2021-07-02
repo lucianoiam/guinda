@@ -46,21 +46,20 @@ class Widget extends HTMLElement {
 
     // Custom element lifecycle callbacks
 
-    static get observedAttributes() {
-        return [];
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (this._initialized) {
-            this._attributeChanged(name, oldValue, newValue);
-        }
-    }
-
     connectedCallback() {
         if (!this._initialized) {
             this._init();
             this._initialized = true;
         }
+    }
+
+    static get observedAttributes() {
+        return [];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        // Class is returning non-empty observedAttributes and attribute changed
+        throw new TypeError('attributeChangedCallback() not implemented');
     }
 
     /**
@@ -73,11 +72,6 @@ class Widget extends HTMLElement {
 
     static _init() {
         // default empty implementation
-    }
-
-    _attributeChanged(name, oldValue, newValue) {
-        // Class is returning non-empty observedAttributes and attribute changed
-        throw new TypeError('_attributeChanged() not implemented');
     }
 
     _init() {
@@ -107,30 +101,29 @@ class Widget extends HTMLElement {
         return prop.length > 0 ? prop : def;
     }
 
-    _readAttrOpt(method, def, key, attrName) {
-        // 1. Try to set opt with parsed attribute
-        // 2. Keep existing opt if not null or undefined
-        // 3. Set opt to provided default
-        method = method.bind(this);
-        this.opt[key] = method(attrName ?? key.toLowerCase(), null) ?? this.opt[key] ?? def;
+    // 1. Try to set opt parsing attribute
+    // 2. Try to keep current opt
+    // 3. Set provided default
+
+    _optAttrBool(key, def, attrName) {
+        const val = this._attrString(key, null, attrName);
+        if ((val == 'false') || val == 'true') return val == 'true';
+        if ((this._opt[key] === false) || (this._opt[key] === true)) return this._opt[key];
+        return def;
     }
 
-    _attrBool(attrName, def) {
-        return parseInt(this._attrString(attrName, 'false')) == 'true';
+    _optAttrInt(key, def, attrName) {
+        const val = parseInt(this._attrString(key, null, attrName));
+        this._opt[key] = !isNaN(val) ? val : (!isNaN(this._opt[key]) ? this._opt[key] : def);
     }
 
-    _attrInt(attrName, def) {
-        const val = parseInt(this._attrString(attrName, null));
-        return !isNaN(val) ? val : def;
+    _optAttrFloat(key, def, attrName) {
+        const val = parseFloat(this._attrString(key, null, attrName));
+        this._opt[key] = !isNaN(val) ? val : (!isNaN(this._opt[key]) ? this._opt[key] : def);
     }
 
-    _attrFloat(attrName, def) {
-        const val = parseFloat(this._attrString(attrName, null));
-        return !isNaN(val) ? val : def;
-    }
-
-    _attrString(attrName, def) {
-        const attr = this.attributes.getNamedItem(attrName);
+    _optAttrString(key, def, attrName) {
+        const attr = this.attributes.getNamedItem(attrName ?? key.toLowerCase());
         return attr ? attr.value : def;
     }
 
@@ -147,10 +140,6 @@ class InputWidget extends Widget {
      *  Public
      */
 
-    static get observedAttributes() {
-        return ['value'];
-    }
-
     constructor(opt) {
         super(opt);
         this._value = null;  
@@ -161,8 +150,22 @@ class InputWidget extends Widget {
         return this._value;
     }
 
-    set value(newValue) {
-        this._value = newValue;
+    set value(value) {
+        if (this._value == value) {
+            return;
+        }
+
+        this._value = value;
+        
+        // Unlike a regular range HTMLInputElement, externally updating the
+        // value will result in an input event being dispatched.
+        // HTMLInputElement type=range triggers Event, type=text -> InputEvent.
+
+        this._dispatchInputEvent();
+    }
+
+    static get observedAttributes() {
+        return ['value'];
     }
 
     /**
@@ -170,84 +173,16 @@ class InputWidget extends Widget {
      */
 
     _dispatchInputEvent() {
-        const ev = new Event('input');
-        ev.value = this._value;
-        this.dispatchEvent(ev);
-    }
+        // Check if the instance is initialized before attempting to dispatch
+        // input events otherwise the input listener will be undefined when
+        // setting both 'oninput' and 'value' attributes in HTML:
+        // <a-elem value="foo" oninput="someStillUndefinedFunction()"></a-elem>
 
-}
-
-
-/**
- *  Base class for widgets that store a value within a range
- */
-
-class RangeInputWidget extends InputWidget {
-
-    /**
-     * Public
-     */
-
-    static get observedAttributes() {
-        return super.observedAttributes.concat(['min', 'max']);
-    }
-
-    get value() {
-        return super.value; // overriding setter requires overriding getter
-    }
-
-    set value(newValue) {
-        super.value = this._clamp(newValue);
-
-        if (this._valueUpdated) {
-            this._valueUpdated(this.value);
+        if (this._initialized) {
+            const ev = new Event('input');
+            ev.value = this._value;
+            this.dispatchEvent(ev);
         }
-    }
-
-    /**
-     * Internal
-     */
-
-    _init() {
-        super._init();
-        this._readAttrOptRange();
-    }
-
-    _attributeChanged(name, oldValue, newValue) {
-        this._readAttrOptRange();
-
-        if (name == 'value') {
-            this._readAttrValue();
-        }
-    }
-
-    _range() {
-        return this.opt.maxValue - this.opt.minValue;
-    }
-
-    _clamp(value) {
-        return Math.max(this.opt.minValue, Math.min(this.opt.maxValue, value));
-    }
-
-    _normalize(value) {
-        return (value - this.opt.minValue) / this._range();
-    }
-
-    _denormalize(value) {
-        return this.opt.minValue + value * this._range();
-    }
-
-    _readAttrValue() {
-        this.value = this._attrFloat('value');
-    }
-
-    /**
-     * Private
-     */
-
-    _readAttrOptRange() {
-        this._readAttrOpt(this._attrFloat, 0, 'minValue', 'min');
-        this._readAttrOpt(this._attrFloat, 1, 'maxValue', 'max');
     }
 
 }
@@ -356,6 +291,31 @@ function ControlTrait() {
 
 }
 
+function RangeTrait() {
+
+    this._optAttrFloat('minValue', 0, 'min');
+    this._optAttrFloat('maxValue', 1.0, 'max');
+
+    const proto = this.constructor.prototype;
+
+    proto._range = () => {
+        return this.opt.maxValue - this.opt.minValue;
+    };
+
+    proto._clamp = (value) => {
+        return Math.max(this.opt.minValue, Math.min(this.opt.maxValue, value));
+    };
+
+    proto._normalize = (value) => {
+        return (value - this.opt.minValue) / this._range();
+    };
+
+    proto._denormalize = (value) => {
+        return this.opt.minValue + value * this._range();
+    };
+
+}
+
 
 /**
  * Support
@@ -434,22 +394,22 @@ class ResizeHandle extends InputWidget {
         const defWidth = this.parentNode.clientWidth;
         const defHeight = this.parentNode.clientHeight;
 
-        this._readAttrOpt(this._attrInt, defWidth, 'minWidth');
-        this._readAttrOpt(this._attrInt, defHeight, 'minHeight');
+        this._optAttrInt('minWidth', defWidth);
+        this._optAttrInt('minHeight', defHeight);
 
-        this._readAttrOpt(this._attrFloat, 0, 'maxScale');
+        this._optAttrFloat('maxScale', 0);
 
         // Setting maxScale overrides maxWidth and maxHeight
         if (this.opt.maxScale > 0) {
             this.opt.maxWidth = this.opt.maxScale * this.opt.minWidth;
             this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
         } else {
-            this._readAttrOpt(this._attrInt, defWidth, 'maxWidth');
-            this._readAttrOpt(this._attrInt, defHeight, 'maxHeight');
+            this._optAttrInt('maxWidth', defWidth);
+            this._optAttrInt('maxHeight', defHeight);
         }
 
         // Keep aspect ratio while resizing, default to no
-        this._readAttrOpt(this._attrBool, false, 'keepAspectRatio');
+        this._optAttrBool('keepAspectRatio', false);
 
         // Initialize state
         this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
@@ -511,15 +471,22 @@ class ResizeHandle extends InputWidget {
             this._width = newWidth;
             this._height = newHeight;
             this.value = {width: this._width, height: this._height};
-
-            this._dispatchInputEvent();
         }
     }
 
 }
 
+class Knob extends InputWidget {
 
-class Knob extends RangeInputWidget {
+    /**
+     * Public
+     */
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        console.log(name + ' ' + this._optAttrFloat('value', 0));
+        this._value = this._optAttrFloat('value', this.value);
+        console.log(this._value);
+    }
 
     /**
      *  Internal
@@ -542,6 +509,8 @@ class Knob extends RangeInputWidget {
     _init() {
         super._init();
 
+        RangeTrait.apply(this);
+
         const This = this.constructor;
 
         this.innerHTML = This._svgData;
@@ -550,24 +519,27 @@ class Knob extends RangeInputWidget {
         const d = SvgMath.describeArc(150, 150, 100, This._trackStartAngle, This._trackEndAngle);
         this.querySelector('.knob-track').setAttribute('d', d);
 
+        this.addEventListener('input', this._redraw);
+
         this.addEventListener('controlstart', this._onGrab);
         this.addEventListener('controlcontinue', this._onMove);
 
-        this._readAttrValue(); // initial draw
-    }
+        this.value = this._optAttrFloat('value', 0); // initial value
 
-    _valueUpdated() {
-        const This = this.constructor;
-        const range = Math.abs(This._trackStartAngle) + Math.abs(This._trackEndAngle);
-        const endAngle = This._trackStartAngle + range * this._normalize(this.value);
-        const d = SvgMath.describeArc(150, 150, 100, This._trackStartAngle, endAngle);
-
-        this.querySelector('.knob-value').setAttribute('d', d);
+        this._redraw(); // no input events are generated during _init()
     }
 
     /**
      *  Private
      */
+
+    _redraw() {
+        const This = this.constructor;
+        const range = Math.abs(This._trackStartAngle) + Math.abs(This._trackEndAngle);
+        const endAngle = This._trackStartAngle + range * this._normalize(this.value);
+        const d = SvgMath.describeArc(150, 150, 100, This._trackStartAngle, endAngle);
+        this.querySelector('.knob-value').setAttribute('d', d);
+    }
 
     _onGrab(ev) {
         this._startValue = this.value;
@@ -599,8 +571,6 @@ class Knob extends RangeInputWidget {
         }
 
         this.value = this._clamp(this._startValue + dv);
-
-        this._dispatchInputEvent();
     }
 
 }
