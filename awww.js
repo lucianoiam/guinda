@@ -509,6 +509,14 @@ class ResizeHandle extends InputWidget {
         this.style.right = '0px';
         this.style.bottom = '0px';
 
+        if (parseInt(this._styleProp('width')) == 0) {
+            this.style.width = '37px';
+        }
+
+        if (parseInt(this._styleProp('height')) == 0) {
+            this.style.height = '37px';
+        }
+
         const svgData = this.constructor._svgData;
 
         switch (this._styleProp('--graphic', 'dots').toLowerCase()) {
