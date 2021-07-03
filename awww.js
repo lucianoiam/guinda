@@ -490,6 +490,11 @@ class ResizeHandle extends InputWidget {
             this.style.height = '37px';
         }
 
+        // Ideally the --graphic style property should be observed for changes
+        // so the graphic can be updated at any time. A known method is by
+        // implementing a MutableObserver but as of Jul '21 the observer seems
+        // to only notify changes in built-in style properties and not custom.
+
         const svgData = this.constructor._svgData;
 
         switch (this._styleProp('--graphic', 'dots').toLowerCase()) {
