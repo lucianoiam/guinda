@@ -31,7 +31,7 @@
   <body>
 
     <h2><a href="https://github.com/lucianoiam/awww" target="_blank">Awww</a></h2>
-    <span id="watermark">ALPHA</span>
+    <span id="watermark" class="hint">Alpha</span>
     <hr>
 
     <div id="widgets">
@@ -49,6 +49,8 @@
         <h4>Resize Handle</h4>
 
         <div id="resize-container">
+
+            <div class="hint">Parent</div>
 
             <a-resize
                 minwidth="200"
@@ -117,7 +119,6 @@
         position: fixed;
         top: 25px;
         right: 25px;
-        opacity: 0.5;
     }
 
     #log {
@@ -141,6 +142,16 @@
         background: #555;
         width: 300px;
         height: 150px;
+    }
+
+    #resize-container > div {
+        font-size: 0.75rem;
+        padding: 5px;
+    }
+
+    .hint {
+        opacity: 0.5;
+        text-transform: uppercase;
     }
 
     </style>

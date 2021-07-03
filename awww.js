@@ -56,7 +56,7 @@ class Widget extends HTMLElement {
             }
         });
 
-        // Set any missing option values using defaults
+        // Fill in any missing option values using defaults
 
         for (const desc of this.constructor._attrOptDescriptor) {
             if (!(desc.key in this.opt) && (typeof(desc.default) !== 'undefined')) {
@@ -86,9 +86,9 @@ class Widget extends HTMLElement {
 
         if (desc) {
             const valStr = this._attr(desc.key.toLowerCase());
-            const val = desc.parser(valStr);
+            const val = desc.parser(valStr, null);
 
-            if (typeof(val) !== 'undefined') {
+            if (val !== null) {
                 this.opt[desc.key] = val;
             }
         }
