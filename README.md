@@ -59,7 +59,7 @@ Options can be also updated any time after instantiation:
 ```JavaScript
 const knob = new Knob();
 
-knob.opt.minValue = 0;
+knob.opt.min = 0;
 
 knob.setAttribute('max', 1.0);
 
