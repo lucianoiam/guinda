@@ -164,7 +164,7 @@ class InputWidget extends Widget {
      *  Internal
      */
 
-    _setValueAndDispatch(newValue) {
+    _setValueIfNeededAndDispatch(newValue) {
         if (this._value == newValue) {
             return;
         }
@@ -543,7 +543,7 @@ class ResizeHandle extends InputWidget {
             this._width = newWidth;
             this._height = newHeight;
 
-            this._setValueAndDispatch({
+            this._setValueIfNeededAndDispatch({
                 width: this._width,
                 height: this._height
             });
@@ -642,7 +642,7 @@ class Knob extends RangeInputWidget {
             dv = this._range() * this._dragDistance / this.clientHeight;
         }
 
-        this._setValueAndDispatch(this._clamp(this._startValue + dv));
+        this._setValueIfNeededAndDispatch(this._clamp(this._startValue + dv));
     }
 
 }
