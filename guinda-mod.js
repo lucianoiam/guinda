@@ -22,7 +22,7 @@ export default await (async () => {
 
     await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'awww.js';
+        script.src = 'guinda.js';
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);

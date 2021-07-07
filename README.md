@@ -1,6 +1,9 @@
-# Awww
+# Guinda
 
-Audio Warpin' Web Widgets, a single file library of audio oriented widgets for use in web views.
+A small single file library of audio oriented widgets for use in web views.
+
+Guinda is also the Spanish word for a kind of cherry. That is, a small fruit.
+It is pronounced like *geenda*
 
 ### Features
 
@@ -13,20 +16,20 @@ Audio Warpin' Web Widgets, a single file library of audio oriented widgets for u
 
 ### Example
 
-Live demo [here](https://raw.githack.com/lucianoiam/awww/master/demo.html)
+Live demo [here](https://raw.githack.com/lucianoiam/guinda/master/demo.html)
 
 Pure HTML:
 
 ```HTML
 <body>
 
-   <a-knob
+   <g-knob
       min="0"
       max="1"
       oninput="`The new knob value is ${this.value}`">
-   <a-knob>
+   <g-knob>
 
-   <script src="awww.js"></script>
+   <script src="guinda.js"></script>
 
 </body>
 ```
@@ -34,7 +37,7 @@ Pure HTML:
 Programmatically:
 
 ```JavaScript
-const knob = document.createElement('a-knob');
+const knob = document.createElement('g-knob');
 
 knob.opt.min = 0;
 knob.opt.max = 1;
@@ -70,11 +73,11 @@ shim that loads the regular version and exports its classes. It makes use of the
 `export default await` construct which works on Firefox and Chrome but does not
 seem to work on Safari as of Jul '21.
 ```JavaScript
-import Awww from './awww-mod.js';
+import Guinda from './guinda-mod.js';
 
-const knob = new Awww.Knob({min: 0, max: 1});
+const knob = new Guinda.Knob({min: 0, max: 1});
 ```
 
-Originally created for building the user interface of [Castello Reverb](https://github.com/lucianoiam/castello-rev) VST/LV2 desktop plugin (WIP)
+Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello-rev) VST/LV2 desktop plugin (WIP)
 
 ![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif) This project is also pretty much work in progress ![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif)

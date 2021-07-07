@@ -28,7 +28,7 @@ class Widget extends HTMLElement {
 
     static define() {
         this._initialize();
-        window.customElements.define(`a-${this._unqualifiedNodeName}`, this);
+        window.customElements.define(`g-${this._unqualifiedNodeName}`, this);
     }
 
     constructor(opt) {
