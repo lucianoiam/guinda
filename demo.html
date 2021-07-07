@@ -11,16 +11,16 @@
     
     <style>
 
-    a-knob {
+    g-knob {
         width: 74px;
         height: 74px;
     }
 
-    a-resize {
+    g-resize {
         --graphic: dots;
     }
 
-    a-resize path {
+    g-resize path {
         fill: #000;
     }
 
@@ -38,12 +38,12 @@
 
         <h4>Knob</h4>
 
-        <a-knob
+        <g-knob
             min="0"
             max="2.0"
             value="0.5"
             oninput="toast(this.value.toFixed(2))">
-        </a-knob>
+        </g-knob>
 
         <hr>
         <h4>Resize Handle</h4>
@@ -52,13 +52,13 @@
 
             <div class="hint">Parent</div>
 
-            <a-resize
+            <g-resize
                 minwidth="200"
                 minheight="100"
                 maxscale="2"
                 keepaspectratio="true"
                 oninput="aResizeListener.call(this)">
-            </a-resize>
+            </g-resize>
         
         </div>
 
@@ -111,7 +111,7 @@
         opacity: 0.25;
     }
 
-    a-resize line {
+    g-resize line {
         stroke: #000; /* lines version */
     }
 
@@ -136,8 +136,8 @@
     }
 
     #resize-container {
-        box-sizing: border-box; /* make <a-resize> behave in a predictable way */
-        position: relative;     /* support <a-resize> position:absolute */
+        box-sizing: border-box; /* make <g-resize> behave in a predictable way */
+        position: relative;     /* support <g-resize> position:absolute */
         border-radius: 5px;
         background: #555;
         width: 300px;
@@ -163,7 +163,7 @@
     const cssRuleList = document.styleSheets[0].cssRules;
 
     const widgets = [...document.getElementById('widgets').querySelectorAll('*')]
-                        .filter(el => el.nodeName.startsWith('A-'));
+                        .filter(el => el.nodeName.startsWith('G-'));
 
     for (const widget of widgets) {
 
@@ -195,7 +195,7 @@
 
         const listener = widget.nodeName.split('-').map((s, i) => {
             return i > 0 ? s[0] + s.slice(1).toLowerCase() : s[0].toLowerCase();
-        }).join('') + 'Listener'; // <a-knob> -> aKnobListener
+        }).join('') + 'Listener'; // <g-knob> -> aKnobListener
 
         if (listener in window) {
             const preWithJs = document.createElement('pre');
