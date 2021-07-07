@@ -1,4 +1,4 @@
-# Guinda
+# Guinda 🍒
 
 A small single file library of audio oriented widgets for use in web views.
 
