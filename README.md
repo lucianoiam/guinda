@@ -1,8 +1,10 @@
-# Guinda 🍒
+# Guinda
 
 A small single file library of audio oriented widgets for use in web views.
 
 Guinda is also the Spanish word for a kind of cherry. It is pronounced like *geenda*.
+
+![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif) This project is work in progress ![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif)
 
 ### Features
 
@@ -78,5 +80,3 @@ const knob = new Guinda.Knob({min: 0, max: 1});
 ```
 
 Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello-rev) VST/LV2 desktop plugin (WIP)
-
-![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif) This project is also pretty much work in progress ![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif)
