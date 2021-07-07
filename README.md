@@ -2,8 +2,7 @@
 
 A small single file library of audio oriented widgets for use in web views.
 
-Guinda is also the Spanish word for a kind of cherry. That is, a small fruit.
-It is pronounced like *geenda*
+Guinda is also the Spanish word for a kind of cherry. It is pronounced like *geenda*.
 
 ### Features
 
