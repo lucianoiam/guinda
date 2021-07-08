@@ -27,7 +27,7 @@ Pure HTML:
    <g-knob
       min="0"
       max="1"
-      oninput="`The new knob value is ${this.value}`">
+      oninput="console.log(`The new knob value is ${this.value}`)">
    <g-knob>
 
    <script src="guinda.js"></script>
