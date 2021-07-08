@@ -74,7 +74,7 @@ shim that loads the regular version and exports its classes. It makes use of the
 `export default await` construct which works on Firefox and Chrome but does not
 seem to work on Safari as of Jul '21.
 ```JavaScript
-import Guinda from './guinda-mod.js';
+import Guinda from './guinda.mjs';
 
 const knob = new Guinda.Knob({min: 0, max: 1});
 ```
