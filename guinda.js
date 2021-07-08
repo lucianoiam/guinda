@@ -651,7 +651,6 @@ class Knob extends RangeInputWidget {
         this._startValue = this.value;
         this._axisTracker = [];
         this._dragDistance = 0;
-        this._prevCursor = document.body.style.cursor;
     }
 
     _onMove(ev) {
@@ -679,7 +678,7 @@ class Knob extends RangeInputWidget {
     }
 
     _onRelease(ev) {
-        document.body.style.cursor = this._prevCursor;
+        document.body.style.cursor = null;
     }
 
 }
