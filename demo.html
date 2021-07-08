@@ -57,7 +57,7 @@
                 minheight="100"
                 maxscale="2"
                 keepaspectratio="true"
-                oninput="aResizeListener.call(this)">
+                oninput="resizeListener.call(this)">
             </g-resize>
         
         </div>
@@ -71,7 +71,7 @@
 
     <script>
 
-    function aResizeListener() {
+    function resizeListener() {
         const style = this.parentNode.style;
         style.width = this.value.width + 'px';
         style.height = this.value.height + 'px';
@@ -158,6 +158,8 @@
 
     <script>
 
+    // Code for self-updating demo
+
     let toastTimeout = null;
 
     const cssRuleList = document.styleSheets[0].cssRules;
@@ -193,9 +195,9 @@
 
         // Insert widget callback code after each widget
 
-        const listener = widget.nodeName.split('-').map((s, i) => {
-            return i > 0 ? s[0] + s.slice(1).toLowerCase() : s[0].toLowerCase();
-        }).join('') + 'Listener'; // <g-knob> -> aKnobListener
+        const listener = widget.nodeName.split('-').slice(1).map((s, i) => {
+            return i == 0 ? s.toLowerCase() : s[0] /* upper */ + s.slice(1).toLowerCase();
+        }).join('') + 'Listener'; // <g-knob> -> knobListener
 
         if (listener in window) {
             const preWithJs = document.createElement('pre');
