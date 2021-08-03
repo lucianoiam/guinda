@@ -79,4 +79,4 @@ import Guinda from './guinda.mjs';
 const knob = new Guinda.Knob({min: 0, max: 1});
 ```
 
-Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello-rev) VST/LV2 desktop plugin (WIP)
+Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello) VST/LV2 desktop plugin (WIP)
