@@ -31,12 +31,14 @@ export default await (async () => {
     // Create exported object
 
     const lib = {
+        ValueScale: ValueScale,
         ResizeHandle: ResizeHandle,
         Knob: Knob
     };
 
     // Nullify (some) loaded symbols
 
+    ValueScale = null;
     ResizeHandle = null;
     Knob = null;
 
