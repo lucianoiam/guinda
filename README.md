@@ -1,10 +1,8 @@
 # Guinda
 
-A small single file library of audio oriented widgets for use in web views.
+A small single file library of audio oriented widgets for use in web views. Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello) VST/LV2 desktop plugin.
 
-Guinda is also the Spanish word for a kind of cherry. It is pronounced like *geenda*.
-
-![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif) This project is work in progress ![](http://textfiles.com/underconstruction/AtAthensOracle1388imagesconstruct.gif)
+Guinda is also the Spanish word for a kind of cherry and is pronounced like *geenda*.
 
 ### Features
 
@@ -14,6 +12,11 @@ Guinda is also the Spanish word for a kind of cherry. It is pronounced like *gee
 * SVG based, allows CSS styling
 * Event driven
 * Minimalistic design
+
+### Widgets
+
+* Knob
+* Resize handle
 
 ### Example
 
@@ -78,5 +81,3 @@ import Guinda from './guinda.mjs';
 
 const knob = new Guinda.Knob({min: 0, max: 1});
 ```
-
-Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello) VST/LV2 desktop plugin (WIP)
