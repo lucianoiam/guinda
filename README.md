@@ -1,6 +1,6 @@
 # Guinda
 
-A small single file library of audio oriented widgets for use in web views. Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello) VST/LV2 desktop plugin.
+A small single file library of audio oriented widgets for use in web views. Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello) VST desktop plugin.
 
 Guinda is also the Spanish word for a kind of cherry and is pronounced like *geenda*.
 
