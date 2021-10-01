@@ -1,5 +1,0 @@
-- Ignore touch events for resize handle when running on Windows and follow
-  mouse events instead. EdgeWebView2 stops tracking swipe gesture for
-  coordinates beyond the window bounds, making it impossible to drag the handle
-  with a finger.
-

@@ -152,7 +152,7 @@ class InputWidget extends Widget {
     constructor(opt) {
         super(opt);
         this._value = null;
-        ControlTrait.apply(this);
+        ControlTrait.apply(this, [opt]);
     }
 
     get value() {
@@ -303,7 +303,8 @@ class ControlEvent extends UIEvent {}
 
 // Merges touch and mouse input events into a single basic set of custom events
 
-function ControlTrait() {
+function ControlTrait(opt) {
+    opt = opt || {};
 
     this._controlStarted = false;
     this._controlTimeout = null;
@@ -314,29 +315,31 @@ function ControlTrait() {
 
     // Handle touch events preventing subsequent simulated mouse events
 
-    this.addEventListener('touchstart', (ev) => {
-        dispatchControlStart(ev, ev.touches[0].clientX, ev.touches[0].clientY);
+    if (!opt.disableTouchEvents) {
+        this.addEventListener('touchstart', (ev) => {
+            dispatchControlStart(ev, ev.touches[0].clientX, ev.touches[0].clientY);
 
-        if (ev.cancelable) {
-            ev.preventDefault();
-        }
-    });
+            if (ev.cancelable) {
+                ev.preventDefault();
+            }
+        });
 
-    this.addEventListener('touchmove', (ev) => {
-        dispatchControlContinue(ev, ev.touches[0].clientX, ev.touches[0].clientY);
+        this.addEventListener('touchmove', (ev) => {
+            dispatchControlContinue(ev, ev.touches[0].clientX, ev.touches[0].clientY);
 
-        if (ev.cancelable) {
-            ev.preventDefault();
-        }
-    });
-    
-    this.addEventListener('touchend', (ev) => {
-        dispatchControlEnd(ev);
+            if (ev.cancelable) {
+                ev.preventDefault();
+            }
+        });
+        
+        this.addEventListener('touchend', (ev) => {
+            dispatchControlEnd(ev);
 
-        if (ev.cancelable) {
-            ev.preventDefault();
-        }
-    });
+            if (ev.cancelable) {
+                ev.preventDefault();
+            }
+        });
+    }
 
     // Simulate touch behavior for mouse, for example react to move events outside element
 
@@ -591,7 +594,13 @@ class ResizeHandle extends InputWidget {
     }
 
     constructor() {
-        super();
+        // Disable touch events for Windows Edge and follow mouse events instead.
+        // This browser stops tracking swipe gestures for coordinates beyond the
+        // window bounds, making it impossible to drag the handle with a finger.
+        const userAgent = window.navigator.userAgent; 
+        const isWindowsEdge = /Windows/i.test(userAgent) && /Edg/i.test(userAgent);
+
+        super({disableTouchEvents: isWindowsEdge});
         
         this._width = 0;
         this._height = 0;
