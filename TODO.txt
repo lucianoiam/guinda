@@ -1,0 +1,5 @@
+- Button widget
+- Circular progress widget
+- H or V linear range widget
+- Modal popup widget
+- VU meter widget
