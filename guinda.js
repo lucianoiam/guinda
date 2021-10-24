@@ -818,6 +818,8 @@ class Knob extends RangeInputWidget {
 
         if (ev.isInputWheel) {
             document.body.style.cursor = axis > 0 ? 'ew-resize' : 'ns-resize';
+        } else {
+            document.body.style.cursor = 'none';
         }
 
         const dmov = axis > 0 ? ev.deltaX : -ev.deltaY;
