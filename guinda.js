@@ -671,10 +671,12 @@ class ResizeHandle extends InputWidget {
     }
 
     _onDrag(ev) {
-        // Note 1: Relying on MouseEvent movementX/Y results in a smoother movement
-        //         on Mac though it will be slower on REAPER due to UI refresh rate.
-        // Note 2: On Windows touchmove events stop triggering if the window size is
-        //         modified while the listener runs. Does not happen with mousemove.
+        // Note 1: Relying on MouseEvent movementX/Y results in slow response
+        //         when REAPER is configured to throotle down mouse events on
+        //         macOS. Use custom deltaX/Y instead for such case.
+        //         https://www.reddit.com/r/Reaper/comments/rsnjyp/just_found_fix_for_all_reaper_lag_low_fps_on_macos/
+        // Note 2: On Windows touchmove events stop triggering if the window is
+        //         resized while the listener runs. mousemove not affected.
 
         const useMouseDelta = /mac/i.test(window.navigator.platform) && ev.isInputMouse;
         const deltaX = useMouseDelta ? ev.originalEvent.movementX : ev.deltaX;
@@ -790,8 +792,9 @@ class Knob extends RangeInputWidget {
     }
 
     _onMove(ev) {
-        // Note: REAPER throttles down UI refresh rate so relying on MouseEvent
-        //       movementX/Y results in slow response. Use custom deltaX/deltaY.
+        // Note: Relying on MouseEvent movementX/Y results in slow response when
+        //       REAPER is configured to throotle down mouse events on macOS.
+        //       Use custom deltaX/Y instead for such case.
 
         const dir = Math.abs(ev.deltaX) - Math.abs(ev.deltaY);
 
