@@ -26,7 +26,7 @@ class Widget extends HTMLElement {
      *  Public
      */
 
-    static define() {
+    static defineCustomElement() {
         this._initialize();
         window.customElements.define(`g-${this._unqualifiedNodeName}`, this);
     }
@@ -200,7 +200,7 @@ class InputWidget extends Widget {
 
 
 /**
- *  Base class for widgets that store a value within a range
+ *  Base class for widgets that handle a value within a range
  */
 
 class RangeInputWidget extends InputWidget {
@@ -348,7 +348,7 @@ function ControlTrait(opt) {
         dispatchControlStart(ev, ev.clientX, ev.clientY);
     });
 
-    // Special treatment for wheel: synthesize start, continue and end events
+    // Special treatment for wheel: custom start, continue and end events
 
     this.addEventListener('wheel', (ev) => {
         if (!this._controlStarted) {
@@ -434,7 +434,7 @@ function ControlTrait(opt) {
 
 
 /**
- *  Value scales
+ *  Support
  */
 
 const ValueScale = {
@@ -472,10 +472,6 @@ const ValueScale = {
 
 };
 
-
-/**
- *  Support
- */
 
 class ValueParser {
 
@@ -534,9 +530,9 @@ class SvgMath {
 }
 
 
-/**
- *  Concrete widget implementations
- */
+// +------------------------------------------------------------------------+ //
+// |                    CONCRETE WIDGET IMPLEMENTATIONS                     | //
+// +------------------------------------------------------------------------+ //
 
 class ResizeHandle extends InputWidget {
 
@@ -795,7 +791,7 @@ class Knob extends RangeInputWidget {
 
     _onMove(ev) {
         // Note: REAPER throttles down UI refresh rate so relying on MouseEvent
-        //       movementX/Y results in slow response. Use synthetic deltaX/deltaY.
+        //       movementX/Y results in slow response. Use custom deltaX/deltaY.
 
         const dir = Math.abs(ev.deltaX) - Math.abs(ev.deltaY);
 
@@ -836,6 +832,4 @@ class Knob extends RangeInputWidget {
  *  Static library initialization
  */
 
-{
-    [ResizeHandle, Knob].forEach((cls) => cls.define());
-}
+[ResizeHandle, Knob].forEach((cls) => cls.defineCustomElement());
