@@ -1,6 +1,6 @@
 /*
  * Guinda - Audio widgets for web views
- * Copyright (C) 2021 Luciano Iam <oss@lucianoiam.com>
+ * Copyright (C) 2021-2022 Luciano Iam <oss@lucianoiam.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,18 +30,18 @@ export default await (async () => {
 
     // Create exported object
 
-    const lib = {
+    return {
+        Widget: Widget,
+        InputWidget: InputWidget,
+        RangeInputWidget: RangeInputWidget,
+        ControlEvent: ControlEvent,
+        ControlTrait: ControlTrait,
         ValueScale: ValueScale,
-        ResizeHandle: ResizeHandle,
-        Knob: Knob
+        ValueParser: ValueParser,
+        SvgMath: SvgMath,
+        Knob: Knob,
+        Fader: Fader,
+        ResizeHandle: ResizeHandle
     };
-
-    // Nullify (some) loaded symbols
-
-    ValueScale = null;
-    ResizeHandle = null;
-    Knob = null;
-
-    return lib;
 
 }) ();

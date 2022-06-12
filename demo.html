@@ -14,11 +14,22 @@
     g-knob {
         width: 74px;
         height: 74px;
-        --circle-color: #404040;
-        --dot-off-color: #000;
-        --dot-on-color: #fff;
-        --track-color: #404040;
+        --body-color: #404040;
+        --range-color: #404040;
         --value-color: #fff;
+        --pointer-off-color: #000;
+        --pointer-on-color: #fff;
+    }
+
+    g-fader {
+        width: 50px;
+        height: 200px;
+        direction: ltr;
+        --body-color: #404040;
+        --range-color: #404040;
+        --value-color: #fff;
+        --pointer-off-color: #000;
+        --pointer-on-color: #fff;
     }
 
     g-resize {
@@ -42,10 +53,19 @@
 
         <g-knob
             min="0"
-            max="2.0"
-            value="0.5"
+            max="1.0"
+            value="0.25"
             oninput="toast(this.value.toFixed(2))">
         </g-knob>
+
+        <h4>Fader</h4>
+
+        <g-fader
+            min="0"
+            max="1.0"
+            value="0.75"
+            oninput="toast(this.value.toFixed(2))">
+        </g-fader>
 
         <hr>
         <h4>Resize Handle</h4>
@@ -136,7 +156,7 @@
         box-sizing: border-box; /* make <g-resize> behave in a predictable way */
         position: relative;     /* support <g-resize> position:absolute */
         border-radius: 5px;
-        background: #555;
+        background: #404040;
         width: 300px;
         height: 150px;
     }
@@ -147,7 +167,7 @@
     }
 
     .hint {
-        opacity: 0.5;
+        opacity: 0.2;
         text-transform: uppercase;
     }
 

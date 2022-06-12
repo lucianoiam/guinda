@@ -1,21 +1,22 @@
-# Guinda
+# Guinda 🍒
 
-A small single file library of audio oriented widgets for use in web views. Originally created for building the user interface in [Castello Reverb](https://github.com/lucianoiam/castello) VST desktop plugin.
+GUIs in Digital Audio
 
-Guinda is also the Spanish word for a kind of cherry and is pronounced like *geenda*.
+A small single file library of audio oriented widgets for use in web views.
 
 ### Features
 
 * ECMAScript 2015 (ES6)
-* Leverages [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) HTML standard
-* Touch and mouse friendly
-* SVG based, allows CSS styling
+* Leverages [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) standard
+* Touch-first but also mouse friendly
+* SVG graphics with CSS styling
 * Event driven
 * Minimalistic design
 
 ### Widgets
 
 * Knob
+* Fader
 * Resize handle
 
 ### Example
@@ -72,10 +73,8 @@ knob.setAttribute('max', 1.0);
 
 ```
 
-The library can be imported as a module. Note that the module version is just a
-shim that loads the regular version and exports its classes. It makes use of the
-`export default await` construct which works on Firefox and Chrome but does not
-seem to work on Safari as of Jul '21.
+The library can be imported as a module. Note that the module version simply
+consists in a shim that loads the regular version and exports its symbols.
 ```JavaScript
 import Guinda from './guinda.mjs';
 

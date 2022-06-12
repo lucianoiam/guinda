@@ -534,6 +534,252 @@ class SvgMath {
 // |                    CONCRETE WIDGET IMPLEMENTATIONS                     | //
 // +------------------------------------------------------------------------+ //
 
+class Knob extends RangeInputWidget {
+
+    /**
+     *  Internal
+     */
+    
+    static get _unqualifiedNodeName() {
+        return 'knob';
+    }
+
+    static get _attrOptDescriptor() {
+        return super._attrOptDescriptor.concat([
+            { key: 'sensibility', parser: ValueParser.float, default: 2.0 }
+        ]);
+    }
+
+    static _initialize() {
+        this._rangeStartAngle = -135;
+        this._rangeEndAngle   =  135;
+
+        this._svgData = `<svg viewBox="0 0 100 100">
+                            <g id="knob">
+                                <circle id="body" cx="50" cy="50" r="38"/>
+                                <circle id="pointer" cx="50" cy="25" r="4"/>
+                            </g>
+                            <path id="range" fill="none" stroke-width="9"/>
+                            <path id="value" fill="none" stroke-width="9"/>
+                         </svg>`;
+    }
+
+    constructor() {
+        super();
+
+        this.addEventListener('controlstart', this._onGrab);
+        this.addEventListener('controlcontinue', this._onMove);
+        this.addEventListener('controlend', this._onRelease);
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+
+        this._root.innerHTML = `<style>
+            #body { fill: ${this._styleProp('--body-color', '#404040')}; }
+            #range { stroke: ${this._styleProp('--range-color', '#404040')}; }
+            #value { stroke: ${this._styleProp('--value-color', '#ffffff')}; }
+        </style>`;
+
+        const This = this.constructor;
+
+        this._root.innerHTML += This._svgData;
+        this.style.display = 'block';
+ 
+        const d = SvgMath.describeArc(50, 50, 45, This._rangeStartAngle, This._rangeEndAngle);
+        this._root.getElementById('range').setAttribute('d', d);
+
+        this._readAttrValue();
+    }
+    
+    _redraw() {
+        const knob = this._root.getElementById('knob');
+        const value = this._root.getElementById('value');
+        const pointer = this._root.getElementById('pointer');
+
+        if (!knob) {
+            return;
+        }
+
+        const This = this.constructor;
+        const range = Math.abs(This._rangeStartAngle) + Math.abs(This._rangeEndAngle);
+        const endAngle = This._rangeStartAngle + range * this._value;
+
+        knob.setAttribute('transform', `rotate(${endAngle}, 50, 50)`);
+        value.setAttribute('d', SvgMath.describeArc(50, 50, 45, This._rangeStartAngle, endAngle));
+        pointer.style.fill = this.value == 0 ? this._styleProp('--pointer-off-color', '#000') 
+                    : this._styleProp('--pointer-on-color', window.getComputedStyle(value).stroke);
+    }
+
+    /**
+     *  Private
+     */
+
+    _onGrab(ev) {
+        this._startValue = this._value;
+        this._dragDistance = 0;
+        this._axisTracker = [];
+    }
+
+    _onMove(ev) {
+        // Note: Relying on MouseEvent movementX/Y results in slow response when
+        //       REAPER is configured to throotle down mouse events on macOS.
+        //       Use custom deltaX/Y instead for such case.
+
+        const dir = Math.abs(ev.deltaX) - Math.abs(ev.deltaY);
+
+        this._axisTracker.push(dir);
+
+        const axis = this._axisTracker.reduce((n0, n1) => n0 + n1);
+
+        if (this._axisTracker.length > 20) {
+            this._axisTracker.shift();
+        }
+
+        if (ev.isInputWheel) {
+            document.body.style.cursor = axis > 0 ? 'ew-resize' : 'ns-resize';
+        } else {
+            document.body.style.cursor = 'none';
+        }
+
+        const dmov = (axis > 0 ? ev.deltaX : -ev.deltaY) / this.clientHeight;
+        const k0 = 0.1;
+        const k1 = 2.0 * (dmov < 0 ? -1 : 1);
+
+        this._dragDistance += k0 * dmov + k1 * Math.pow(dmov, 2);
+
+        const dval = this._dragDistance * this.opt.sensibility;
+        const val = Math.max(0, Math.min(1.0, this._startValue + dval));
+
+        this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
+    }
+
+    _onRelease(ev) {
+        document.body.style.cursor = null;
+    }
+
+}
+
+
+class Fader extends RangeInputWidget {
+
+    /**
+     *  Internal
+     */
+    
+    static get _unqualifiedNodeName() {
+        return 'fader';
+    }
+
+    static get _attrOptDescriptor() {
+        return super._attrOptDescriptor.concat([
+            { key: 'sensibility', parser: ValueParser.float, default: 5.0 }
+        ]);
+    }
+
+    static _initialize() {
+        this._svgData = {
+            LTR: `<svg width="100%" height="100%">
+                    <line id="range" x1="5%" x2="5%" y2="100%" y1="0" stroke-width="6%" />
+                    <line id="value" x1="5%" x2="5%" y2="100%" stroke-width="6%" />
+                    <rect id="body" width="81%" height="100%" x="19%" />
+                    <circle id="pointer" cx="60%" cy="20%" r="2.5%" />
+                  </svg>`,
+            RTL: `<svg width="100%" height="100%">
+                    <line id="range" x1="94%" x2="94%" y2="100%" y1="0" stroke-width="6%" />
+                    <line id="value" x1="94%" x2="94%" y2="100%" stroke-width="6%" />
+                    <rect id="body" width="81%" height="100%" />
+                    <circle id="pointer" cx="40%" cy="20%" r="2.5%" />
+                  </svg>`
+        };
+    }
+
+    constructor() {
+        super();
+
+        this.addEventListener('controlstart', this._onGrab);
+        this.addEventListener('controlcontinue', this._onMove);
+        this.addEventListener('controlend', this._onRelease);
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+
+        this._root.innerHTML = `<style>
+            #body { fill: ${this._styleProp('--body-color', '#404040')}; }
+            #range { stroke: ${this._styleProp('--range-color', '#404040')}; }
+            #value { stroke: ${this._styleProp('--value-color', '#ffffff')}; }
+        </style>`;
+        
+        const This = this.constructor;
+
+        const svgData = this._styleProp('direction', 'ltr') == 'ltr' ?
+            This._svgData.LTR : This._svgData.RTL;
+        this._root.innerHTML += svgData;
+        this.style.display = 'block';
+
+        this._readAttrValue();
+    }
+
+    _redraw() {
+        const value = this._root.getElementById('value');
+        const pointer = this._root.getElementById('pointer');
+
+        if (!pointer) {
+            return;
+        }
+
+        pointer.style.fill = this.value == 0 ? this._styleProp('--pointer-off-color', '#000') 
+                    : this._styleProp('--pointer-on-color', window.getComputedStyle(value).stroke);
+
+        const y = 100 * (1.0 - this.value);
+
+        value.setAttribute('y1', `${y}%`);
+        pointer.setAttribute('cy', `${y}%`);
+    }
+
+    /**
+     *  Private
+     */
+
+    _onGrab(ev) {
+       if (ev.isInputTouch || ev.isInputWheel) {
+            this._startValue = this._value;
+            this._dragDistance = 0;
+        }
+    }
+
+    _onMove(ev) {
+        if (ev.isInputTouch || ev.isInputWheel) {
+            document.body.style.cursor = ev.isInputWheel ? 'ns-resize' : 'none';
+
+            const dmov = -ev.deltaY / this.clientHeight;
+            const k0 = 0.1;
+            const k1 = 2.0 * (dmov < 0 ? -1 : 1);
+
+            this._dragDistance += k0 * dmov + k1 * Math.pow(dmov, 2);
+
+            const dval = this._dragDistance * this.opt.sensibility;
+            const val = Math.max(0, Math.min(1.0, this._startValue + dval));
+
+            this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
+        } else if (ev.isInputMouse) {
+            const y = (ev.clientY - this.getBoundingClientRect().top) / this.clientHeight;
+            const val = 1.0 - Math.max(0, Math.min(1.0, y));
+
+            this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
+        }
+    }
+
+    _onRelease(ev) {
+        if (ev.isInputTouch || ev.isInputWheel) {
+            document.body.style.cursor = null;
+        }
+    }
+
+}
+
+
 class ResizeHandle extends InputWidget {
 
     /**
@@ -557,9 +803,9 @@ class ResizeHandle extends InputWidget {
 
     static _initialize() {
         this._svgData = {
-            LINES_1: `<svg viewBox="10 10 100 100">
-                        <line x1="100" y1="50" x2="50" y2="100" stroke-width="5"/>
-                        <line x1="75" y1="100" x2="100" y2="75" stroke-width="5"/>
+            LINES_1: `<svg viewBox="0 0 100 100">
+                        <line x1="95" y1="45" x2="45" y2="95" stroke-width="3"/>
+                        <line x1="70" y1="95" x2="95" y2="70" stroke-width="3"/>
                       </svg>`,
             LINES_2: `<svg viewBox="0 0 100 100">
                         <line x1="0" y1="100" x2="100" y2="0"/>
@@ -710,129 +956,8 @@ class ResizeHandle extends InputWidget {
 }
 
 
-class Knob extends RangeInputWidget {
-
-    /**
-     *  Internal
-     */
-    
-    static get _unqualifiedNodeName() {
-        return 'knob';
-    }
-
-    static _initialize() {
-        this._trackStartAngle = -135;
-        this._trackEndAngle   =  135;
-
-        this._svgData = `<svg viewBox="40 40 220 220">
-                            <g id="knob">
-                                <circle id="circle" cx="150" cy="150" r="85"/>
-                                <circle id="dot" cx="150" cy="90" r="7.5"/>
-                            </g>
-                            <path id="track" fill="none" stroke-width="20"/>
-                            <path id="value" fill="none" stroke-width="20"/>
-                         </svg>`;
-    }
-
-    constructor() {
-        super();
-
-        this.addEventListener('controlstart', this._onGrab);
-        this.addEventListener('controlcontinue', this._onMove);
-        this.addEventListener('controlend', this._onRelease);
-    }
-
-    connectedCallback() {
-        super.connectedCallback();
-
-        this._root.innerHTML = `<style>
-            #circle { fill: ${this._styleProp('--circle-color', '#404040')}; }
-            #track { stroke: ${this._styleProp('--track-color', '#404040')}; }
-            #value { stroke: ${this._styleProp('--value-color', '#ffffff')}; }
-        </style>`;
-
-        const This = this.constructor;
-
-        this._root.innerHTML += This._svgData;
-        this.style.display = 'block';
- 
-        const d = SvgMath.describeArc(150, 150, 100, This._trackStartAngle, This._trackEndAngle);
-        this._root.getElementById('track').setAttribute('d', d);
-
-        this._readAttrValue();
-    }
-    
-    _redraw() {
-        const knob = this._root.getElementById('knob');
-        const knobDot = this._root.getElementById('dot');
-        const knobValue = this._root.getElementById('value');
-
-        if (!knob) {
-            return;
-        }
-
-        const This = this.constructor;
-        const range = Math.abs(This._trackStartAngle) + Math.abs(This._trackEndAngle);
-        const endAngle = This._trackStartAngle + range * this._value;
-
-        knob.setAttribute('transform', `rotate(${endAngle}, 150, 150)`);
-        knobDot.style.fill = endAngle == This._trackStartAngle ? this._styleProp('--dot-off-color', '#000') 
-                             : this._styleProp('--dot-on-color', window.getComputedStyle(knobValue).stroke);
-        knobValue.setAttribute('d', SvgMath.describeArc(150, 150, 100, This._trackStartAngle, endAngle));
-    }
-
-    /**
-     *  Private
-     */
-
-    _onGrab(ev) {
-        this._startValue = this._value;
-        this._axisTracker = [];
-        this._dragDistance = 0;
-    }
-
-    _onMove(ev) {
-        // Note: Relying on MouseEvent movementX/Y results in slow response when
-        //       REAPER is configured to throotle down mouse events on macOS.
-        //       Use custom deltaX/Y instead for such case.
-
-        const dir = Math.abs(ev.deltaX) - Math.abs(ev.deltaY);
-
-        this._axisTracker.push(dir);
-
-        const axis = this._axisTracker.reduce((n0, n1) => n0 + n1);
-
-        if (this._axisTracker.length > 20) {
-            this._axisTracker.shift();
-        }
-
-        if (ev.isInputWheel) {
-            document.body.style.cursor = axis > 0 ? 'ew-resize' : 'ns-resize';
-        } else {
-            document.body.style.cursor = 'none';
-        }
-
-        const dmov = axis > 0 ? ev.deltaX : -ev.deltaY;
-        const k0 = 0.1;
-        const k1 = 0.04 * (dmov < 0 ? -1 : 1);
-
-        this._dragDistance += k0 * dmov + k1 * Math.pow(dmov, 2);
-
-        const dval = this._dragDistance / this.clientWidth;
-        const val = Math.max(0, Math.min(1.0, this._startValue + dval));
-
-        this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
-    }
-
-    _onRelease(ev) {
-        document.body.style.cursor = null;
-    }
-
-}
-
-
 /**
  *  Static library initialization
  */
 
-[ResizeHandle, Knob].forEach((cls) => cls.defineCustomElement());
+[Knob, Fader, ResizeHandle].forEach((cls) => cls.defineCustomElement());
