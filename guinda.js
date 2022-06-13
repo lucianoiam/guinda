@@ -555,9 +555,9 @@ class Knob extends RangeInputWidget {
         this._rangeEndAngle   =  135;
 
         this._svgData = `<svg viewBox="0 0 100 100">
-                            <g id="knob">
-                                <circle id="body" cx="50" cy="50" r="38"/>
-                                <circle id="pointer" cx="50" cy="25" r="4"/>
+                            <g id="body">
+                                <circle id="body" cx="50" cy="50" r="39"/>
+                                <circle id="pointer" cx="50" cy="22" r="3.5"/>
                             </g>
                             <path id="range" fill="none" stroke-width="9"/>
                             <path id="value" fill="none" stroke-width="9"/>
@@ -593,11 +593,11 @@ class Knob extends RangeInputWidget {
     }
     
     _redraw() {
-        const knob = this._root.getElementById('knob');
+        const body = this._root.getElementById('body');
         const value = this._root.getElementById('value');
         const pointer = this._root.getElementById('pointer');
 
-        if (!knob) {
+        if (!body) {
             return;
         }
 
@@ -605,7 +605,7 @@ class Knob extends RangeInputWidget {
         const range = Math.abs(This._rangeStartAngle) + Math.abs(This._rangeEndAngle);
         const endAngle = This._rangeStartAngle + range * this._value;
 
-        knob.setAttribute('transform', `rotate(${endAngle}, 50, 50)`);
+        body.setAttribute('transform', `rotate(${endAngle}, 50, 50)`);
         value.setAttribute('d', SvgMath.describeArc(50, 50, 45, This._rangeStartAngle, endAngle));
         pointer.style.fill = this.value == 0 ? this._styleProp('--pointer-off-color', '#000') 
                     : this._styleProp('--pointer-on-color', window.getComputedStyle(value).stroke);
@@ -679,17 +679,22 @@ class Fader extends RangeInputWidget {
 
     static _initialize() {
         this._svgData = {
+            SOLID: `<svg width="100%" height="100%">
+                    <rect id="body" width="100%" height="100%" />
+                    <line id="value" y2="100%" stroke-width="100%" />
+                    <circle id="pointer" cx="50%" cy="20%" r="3.5" stroke-width="1%" />
+                  </svg>`,
             LTR: `<svg width="100%" height="100%">
                     <line id="range" x1="5%" x2="5%" y2="100%" y1="0" stroke-width="6%" />
                     <line id="value" x1="5%" x2="5%" y2="100%" stroke-width="6%" />
                     <rect id="body" width="81%" height="100%" x="19%" />
-                    <circle id="pointer" cx="60%" cy="20%" r="2.5%" />
+                    <circle id="pointer" cx="60%" cy="20%" r="3.5" />
                   </svg>`,
             RTL: `<svg width="100%" height="100%">
                     <line id="range" x1="94%" x2="94%" y2="100%" y1="0" stroke-width="6%" />
                     <line id="value" x1="94%" x2="94%" y2="100%" stroke-width="6%" />
                     <rect id="body" width="81%" height="100%" />
-                    <circle id="pointer" cx="40%" cy="20%" r="2.5%" />
+                    <circle id="pointer" cx="40%" cy="20%" r="3.5" />
                   </svg>`
         };
     }
@@ -713,24 +718,36 @@ class Fader extends RangeInputWidget {
         
         const This = this.constructor;
 
-        const svgData = this._styleProp('direction', 'ltr') == 'ltr' ?
-            This._svgData.LTR : This._svgData.RTL;
-        this._root.innerHTML += svgData;
+        switch (this._styleProp('--style', 'solid').toLowerCase()) {
+            case 'solid':
+                this._root.innerHTML += This._svgData.SOLID;
+                break;
+            case 'split':
+                this._root.innerHTML += this._styleProp('direction', 'ltr') == 'ltr' ?
+                                        This._svgData.LTR : This._svgData.RTL
+                break;
+            default:
+                break;
+        }
+
         this.style.display = 'block';
 
         this._readAttrValue();
     }
 
     _redraw() {
+        const body = this._root.getElementById('body');
         const value = this._root.getElementById('value');
         const pointer = this._root.getElementById('pointer');
 
-        if (!pointer) {
+        if (!body) {
             return;
         }
 
         pointer.style.fill = this.value == 0 ? this._styleProp('--pointer-off-color', '#000') 
                     : this._styleProp('--pointer-on-color', window.getComputedStyle(value).stroke);
+        pointer.style.stroke = this._styleProp('--pointer-border-color',
+                                window.getComputedStyle(body).fill);
 
         const y = 100 * (1.0 - this.value);
 
