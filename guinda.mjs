@@ -41,6 +41,7 @@ export default await (async () => {
         SvgMath: SvgMath,
         Knob: Knob,
         Fader: Fader,
+        Button: Button,
         ResizeHandle: ResizeHandle
     };
 

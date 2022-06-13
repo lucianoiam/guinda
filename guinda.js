@@ -554,14 +554,14 @@ class Knob extends RangeInputWidget {
         this._rangeStartAngle = -135;
         this._rangeEndAngle   =  135;
 
-        this._svgData = `<svg viewBox="0 0 100 100">
-                            <g id="body">
-                                <circle id="body" cx="50" cy="50" r="39"/>
-                                <circle id="pointer" cx="50" cy="22" r="3.5"/>
-                            </g>
-                            <path id="range" fill="none" stroke-width="9"/>
-                            <path id="value" fill="none" stroke-width="9"/>
-                         </svg>`;
+        this._svg = `<svg viewBox="0 0 100 100">
+                       <g id="body">
+                         <circle id="body" cx="50" cy="50" r="39"/>
+                         <circle id="pointer" cx="50" cy="22" r="3.5"/>
+                       </g>
+                       <path id="range" fill="none" stroke-width="9"/>
+                       <path id="value" fill="none" stroke-width="9"/>
+                     </svg>`;
     }
 
     constructor() {
@@ -583,7 +583,7 @@ class Knob extends RangeInputWidget {
 
         const This = this.constructor;
 
-        this._root.innerHTML += This._svgData;
+        this._root.innerHTML += This._svg;
         this.style.display = 'block';
  
         const d = SvgMath.describeArc(50, 50, 45, This._rangeStartAngle, This._rangeEndAngle);
@@ -678,7 +678,7 @@ class Fader extends RangeInputWidget {
     }
 
     static _initialize() {
-        this._svgData = {
+        this._svg = {
             SOLID: `<svg width="100%" height="100%">
                     <rect id="body" width="100%" height="100%" />
                     <line id="value" y2="100%" stroke-width="100%" />
@@ -720,11 +720,11 @@ class Fader extends RangeInputWidget {
 
         switch (this._styleProp('--style', 'solid').toLowerCase()) {
             case 'solid':
-                this._root.innerHTML += This._svgData.SOLID;
+                this._root.innerHTML += This._svg.SOLID;
                 break;
             case 'split':
                 this._root.innerHTML += this._styleProp('direction', 'ltr') == 'ltr' ?
-                                        This._svgData.LTR : This._svgData.RTL
+                                        This._svg.LTR : This._svg.RTL
                 break;
             default:
                 break;
@@ -797,6 +797,109 @@ class Fader extends RangeInputWidget {
 }
 
 
+class Button extends InputWidget {
+
+    /**
+     *  Internal
+     */
+    
+    static get _unqualifiedNodeName() {
+        return 'button';
+    }
+
+    static get _attrOptDescriptor() {
+        return super._attrOptDescriptor.concat([
+            { key: 'behavior', parser: ValueParser.string, default: 'momentary' }
+        ]);
+    }
+
+    constructor() {
+        super();
+
+        this.addEventListener('controlstart', this._onSelect);
+        this.addEventListener('controlend', this._onUnselect);
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+
+        this._color = this._styleProp('color', '#fff');
+        this._borderColor = this._styleProp('border-color', '#fff');
+        this._backgroundColor = this._styleProp('background-color', '#000');
+        this._selectedColor = this._styleProp('--selected-color', '#000');       
+
+        this._root.innerHTML = `<div style="
+                                  width: 100%;
+                                  height: 100%;
+                                  display: flex;
+                                  flex-direction: column;
+                                  justify-content: center;
+                                  text-align: center;
+                                  cursor: default">
+                                </div>`;
+
+        // https://stackoverflow.com/questions/48498581/textcontent-empty-in-connectedcallback-of-a-custom-htmlelement
+        let updating = false;
+        const slot = document.createElement('slot');
+
+        slot.addEventListener('slotchange', (ev) => {
+            if (updating) {
+                updating = false;
+            } else {
+                updating = true;
+                const node = ev.target.assignedNodes()[0];
+                this._root.querySelector('div').textContent = node.textContent;
+                node.textContent = '';
+            }
+        });
+
+        this._root.appendChild(slot);
+
+        this.value = ValueParser.bool(this._attr('value'), false);
+        this.style.display = 'inline-block';
+    }
+
+    _redraw() {
+        if (this.value) {
+            this.style.color = this._selectedColor;
+            this.style.borderColor = this._color;
+            this.style.backgroundColor = this._color;
+        } else {
+            this.style.color = this._color;
+            this.style.borderColor = this._borderColor;
+            this.style.backgroundColor = this._backgroundColor;
+        }
+    }
+
+    /**
+     *  Private
+     */
+
+    _onSelect(ev) {
+        if (ev.isInputWheel) {
+            return;
+        }
+
+        if (this.opt.behavior == 'momentary') {
+            this._setValueAndDispatchInputEventIfNeeded(true);
+        } else if (this.opt.behavior == 'latch') {
+            this._setValueAndDispatchInputEventIfNeeded(! this.value);
+        }
+    }
+
+    _onUnselect(ev) {
+        if (ev.isInputWheel) {
+            return;
+        }
+
+        if (this.opt.behavior == 'momentary') {
+            this._setValueAndDispatchInputEventIfNeeded(false);
+        }
+    }
+
+}
+
+
 class ResizeHandle extends InputWidget {
 
     /**
@@ -819,7 +922,7 @@ class ResizeHandle extends InputWidget {
     }
 
     static _initialize() {
-        this._svgData = {
+        this._svg = {
             LINES_1: `<svg viewBox="0 0 100 100">
                         <line x1="95" y1="45" x2="45" y2="95" stroke-width="3"/>
                         <line x1="70" y1="95" x2="95" y2="70" stroke-width="3"/>
@@ -895,18 +998,18 @@ class ResizeHandle extends InputWidget {
             line { stroke: ${color}; }
         </style>`;
 
-        const svgData = this.constructor._svgData;
+        const svg = this.constructor._svg;
 
         switch (this._styleProp('--graphic', 'lines').toLowerCase()) {
             case 'lines':
             case 'lines-1':
-                this._root.innerHTML += svgData.LINES_1;
+                this._root.innerHTML += svg.LINES_1;
                 break;
             case 'lines-2':
-                this._root.innerHTML += svgData.LINES_2;
+                this._root.innerHTML += svg.LINES_2;
                 break;
             case 'dots':
-                this._root.innerHTML += svgData.DOTS;
+                this._root.innerHTML += svg.DOTS;
                 break;
             default:
                 break;
@@ -977,4 +1080,4 @@ class ResizeHandle extends InputWidget {
  *  Static library initialization
  */
 
-[Knob, Fader, ResizeHandle].forEach((cls) => cls.defineCustomElement());
+[Knob, Fader, ResizeHandle, Button].forEach((cls) => cls.defineCustomElement());
