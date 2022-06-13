@@ -809,7 +809,7 @@ class Button extends InputWidget {
 
     static get _attrOptDescriptor() {
         return super._attrOptDescriptor.concat([
-            { key: 'behavior', parser: ValueParser.string, default: 'momentary' }
+            { key: 'mode', parser: ValueParser.string, default: 'momentary' }
         ]);
     }
 
@@ -823,9 +823,9 @@ class Button extends InputWidget {
     connectedCallback() {
         super.connectedCallback();
 
-        this._color = this._styleProp('color', '#fff');
-        this._borderColor = this._styleProp('border-color', '#fff');
-        this._backgroundColor = this._styleProp('background-color', '#000');
+        this._color = this._styleProp('color', /*rgb(0,0,0)*/);
+        this._backgroundColor = this._styleProp('background-color' /*rgb(0,0,0)*/);
+        this._borderColor = this._styleProp('border-color' /*rgb(0,0,0)*/);
         this._selectedColor = this._styleProp('--selected-color', '#000');       
 
         this._root.innerHTML = `<div style="
@@ -880,9 +880,9 @@ class Button extends InputWidget {
             return;
         }
 
-        if (this.opt.behavior == 'momentary') {
+        if (this.opt.mode == 'momentary') {
             this._setValueAndDispatchInputEventIfNeeded(true);
-        } else if (this.opt.behavior == 'latch') {
+        } else if (this.opt.mode == 'latch') {
             this._setValueAndDispatchInputEventIfNeeded(! this.value);
         }
     }
@@ -892,7 +892,7 @@ class Button extends InputWidget {
             return;
         }
 
-        if (this.opt.behavior == 'momentary') {
+        if (this.opt.mode == 'momentary') {
             this._setValueAndDispatchInputEventIfNeeded(false);
         }
     }
