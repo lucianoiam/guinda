@@ -1,4 +1,3 @@
-- React to CSS changes on the fly
 - Image buttons
 - Segmented/continuous circular progress widget
 - VU meter widget

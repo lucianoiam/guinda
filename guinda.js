@@ -63,6 +63,9 @@ class Widget extends HTMLElement {
                 this.opt[desc.key] = desc.default;
             }
         }
+
+        // Style property changes can be observed with MutationObserver but it
+        // only works for built-in style properties and not custom as of 2022.
     }
 
     get opt() {
@@ -1000,9 +1003,6 @@ class ResizeHandle extends InputWidget {
         if (parseInt(this._style('height')) == 0) {
             this.style.height = '24px';
         }
-
-        // Style property changes can be observed implementing MutableObserver
-        // but that only works for built-in style properties and not custom.
 
         const color = this._style('--color', '#000');
 
