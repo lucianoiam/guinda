@@ -58,7 +58,7 @@ class Widget extends HTMLElement {
 
         // Fill in any missing option values using defaults
 
-        for (const desc of this.constructor._attrOptDescriptor) {
+        for (const desc of this.constructor._attributeDescriptors) {
             if (!(desc.key in this.opt) && (typeof(desc.default) !== 'undefined')) {
                 this.opt[desc.key] = desc.default;
             }
@@ -77,12 +77,12 @@ class Widget extends HTMLElement {
 
     static get observedAttributes() {
         const This = this.prototype.constructor;
-        return This._attrOptDescriptor.map(d => d.key.toLowerCase());
+        return This._attributeDescriptors.map(d => d.key.toLowerCase());
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         const This = this.constructor;
-        const desc = This._attrOptDescriptor.find(d => name == d.key.toLowerCase());
+        const desc = This._attributeDescriptors.find(d => name == d.key.toLowerCase());
 
         if (desc) {
             const valStr = this._attr(desc.key.toLowerCase());
@@ -103,10 +103,10 @@ class Widget extends HTMLElement {
      */
 
     static get _unqualifiedNodeName() {
-        throw new TypeError(`_unqualifiedNodeName not implemented for ${this.name}`);
+        throw new TypeError(`_unqualifiedNodeName() not implemented for ${this.name}`);
     }
 
-    static get _attrOptDescriptor() {
+    static get _attributeDescriptors() {
         return [];
     }
 
@@ -119,7 +119,7 @@ class Widget extends HTMLElement {
         return attr ? attr.value : def;
     }
 
-    _styleProp(name, def) {
+    _style(name, def) {
         const prop = getComputedStyle(this).getPropertyValue(name).trim();
         return prop.length > 0 ? prop : def;
     }
@@ -136,23 +136,30 @@ class Widget extends HTMLElement {
 
 
 /**
- *  Base class for widgets that accept and store a value
+ *  Base class for widgets that store a value
  */
 
-class InputWidget extends Widget {
+class StatefulWidget extends Widget {
 
     /**
      *  Public
      */
 
-    static get observedAttributes() {
-        return super.observedAttributes.concat('value');
-    }
-
     constructor(opt) {
         super(opt);
         this._value = null;
-        ControlTrait.apply(this, [opt]);
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+        this._readAttrValue();
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        super.attributeChangedCallback(name, oldValue, newValue);
+        if (name == 'value') {
+            this._readAttrValue();
+        }
     }
 
     get value() {
@@ -169,15 +176,6 @@ class InputWidget extends Widget {
      *  Internal
      */
 
-    _setValueAndDispatchInputEventIfNeeded(newValue) {
-        if (this._value == newValue) {
-            return;
-        }
-
-        this.value = newValue;
-        this._dispatchInputEvent(newValue);
-    }
-
     _valueUpdated() {
         if (this._root) {
             this._redraw();
@@ -188,6 +186,48 @@ class InputWidget extends Widget {
         const ev = new Event('setvalue');
         ev.value = val;
         this.dispatchEvent(ev);
+    }
+
+    /**
+     * Private
+     */
+
+    _readAttrValue() {
+        const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
+        if (typeof(attrDesc) !== 'undefined') {
+            this.value = attrDesc.parser(this._attr('value'), attrDesc.default);
+        }
+    }
+
+}
+
+
+/**
+ *  Base class for widgets that accept an input value
+ */
+
+class InputWidget extends StatefulWidget {
+
+    /**
+     *  Public
+     */
+
+    constructor(opt) {
+        super(opt);
+        ControlTrait.apply(this, [opt]);
+    }
+
+    /**
+     *  Internal
+     */
+
+    _setValueAndDispatchInputEventIfNeeded(newValue) {
+        if (this._value == newValue) {
+            return;
+        }
+
+        this.value = newValue;
+        this._dispatchInputEvent(newValue);
     }
 
     _dispatchInputEvent(val) {
@@ -218,27 +258,13 @@ class RangeInputWidget extends InputWidget {
         super.value = this._normalize(this._clamp(newValue));
     }
 
-    connectedCallback() {
-        super.connectedCallback();
-        this._readAttrValue();
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        super.attributeChangedCallback(name, oldValue, newValue);
-
-        if ((name == 'min') || (name == 'max') || (name == 'scale')) {
-            this.value = this._denormalizedValue;
-        } else if (name == 'value') {
-            this._readAttrValue();
-        }
-    }
-
     /**
      *  Internal
      */
 
-    static get _attrOptDescriptor() {
-        return super._attrOptDescriptor.concat([
+    static get _attributeDescriptors() {
+        return super._attributeDescriptors.concat([
+            { key: 'value', parser: ValueParser.float, default: 0                 },
             { key: 'min'  , parser: ValueParser.float, default: 0                 },
             { key: 'max'  , parser: ValueParser.float, default: 1                 },
             { key: 'scale', parser: ValueParser.scale, default: ValueScale.linear }
@@ -247,10 +273,7 @@ class RangeInputWidget extends InputWidget {
 
     _optionUpdated(key, value) {
         super._optionUpdated(key, value);
-
-        if ((key == 'min') || (key == 'max') || (key == 'scale')) {
-            this.value = this._denormalizedValue;
-        }
+        this.value = this._denormalizedValue;
     }
 
     _setNormalizedValueAndDispatchInputEventIfNeeded(newValue) {
@@ -272,24 +295,15 @@ class RangeInputWidget extends InputWidget {
     }
 
     _normalize(value) {
-        return this._valueScale.normalize(value, this.opt.min, this.opt.max);
+        return this._scale.normalize(value, this.opt.min, this.opt.max);
     }
 
     _denormalize(value) {
-        return this._valueScale.denormalize(value, this.opt.min, this.opt.max);
+        return this._scale.denormalize(value, this.opt.min, this.opt.max);
     }
 
-    get _valueScale() {
+    get _scale() {
         return this.opt.scale || ValueScale.linear;
-    }
-
-    /**
-     *  Private
-     */
-
-    _readAttrValue() {
-        const val = ValueParser.float(this._attr('value'));
-        this.value = !isNaN(val) ? val : this.opt.min;
     }
 
 }
@@ -410,8 +424,7 @@ function ControlTrait(opt) {
 
     const dispatchControlEnd = (originalEvent) => {
         this._controlStarted = false;
-        const ev = createControlEvent('controlend', originalEvent,
-                                        this._prevClientX, this._prevClientY);
+        const ev = createControlEvent('controlend', originalEvent, this._prevClientX, this._prevClientY);
         this.dispatchEvent(ev);
     };
 
@@ -544,8 +557,8 @@ class Knob extends RangeInputWidget {
         return 'knob';
     }
 
-    static get _attrOptDescriptor() {
-        return super._attrOptDescriptor.concat([
+    static get _attributeDescriptors() {
+        return super._attributeDescriptors.concat([
             { key: 'sensibility', parser: ValueParser.float, default: 2.0 }
         ]);
     }
@@ -576,9 +589,9 @@ class Knob extends RangeInputWidget {
         super.connectedCallback();
 
         this._root.innerHTML = `<style>
-            #body { fill: ${this._styleProp('--body-color', '#404040')}; }
-            #range { stroke: ${this._styleProp('--range-color', '#404040')}; }
-            #value { stroke: ${this._styleProp('--value-color', '#ffffff')}; }
+            #body { fill: ${this._style('--body-color', '#404040')}; }
+            #range { stroke: ${this._style('--range-color', '#404040')}; }
+            #value { stroke: ${this._style('--value-color', '#ffffff')}; }
         </style>`;
 
         const This = this.constructor;
@@ -589,13 +602,13 @@ class Knob extends RangeInputWidget {
         const d = SvgMath.describeArc(50, 50, 45, This._rangeStartAngle, This._rangeEndAngle);
         this._root.getElementById('range').setAttribute('d', d);
 
-        this._readAttrValue();
+        this._redraw();
     }
     
     _redraw() {
-        const body = this._root.getElementById('body');
-        const value = this._root.getElementById('value');
-        const pointer = this._root.getElementById('pointer');
+        const body = this._root.getElementById('body'),
+              value = this._root.getElementById('value'),
+              pointer = this._root.getElementById('pointer');
 
         if (!body) {
             return;
@@ -607,8 +620,8 @@ class Knob extends RangeInputWidget {
 
         body.setAttribute('transform', `rotate(${endAngle}, 50, 50)`);
         value.setAttribute('d', SvgMath.describeArc(50, 50, 45, This._rangeStartAngle, endAngle));
-        pointer.style.fill = this.value == 0 ? this._styleProp('--pointer-off-color', '#000') 
-                    : this._styleProp('--pointer-on-color', window.getComputedStyle(value).stroke);
+        pointer.style.fill = this.value == 0 ? this._style('--pointer-off-color', '#000') 
+                    : this._style('--pointer-on-color', window.getComputedStyle(value).stroke);
     }
 
     /**
@@ -671,8 +684,8 @@ class Fader extends RangeInputWidget {
         return 'fader';
     }
 
-    static get _attrOptDescriptor() {
-        return super._attrOptDescriptor.concat([
+    static get _attributeDescriptors() {
+        return super._attributeDescriptors.concat([
             { key: 'sensibility', parser: ValueParser.float, default: 5.0 }
         ]);
     }
@@ -711,19 +724,19 @@ class Fader extends RangeInputWidget {
         super.connectedCallback();
 
         this._root.innerHTML = `<style>
-            #body { fill: ${this._styleProp('--body-color', '#404040')}; }
-            #range { stroke: ${this._styleProp('--range-color', '#404040')}; }
-            #value { stroke: ${this._styleProp('--value-color', '#ffffff')}; }
+            #body { fill: ${this._style('--body-color', '#404040')}; }
+            #range { stroke: ${this._style('--range-color', '#404040')}; }
+            #value { stroke: ${this._style('--value-color', '#ffffff')}; }
         </style>`;
         
         const This = this.constructor;
 
-        switch (this._styleProp('--style', 'solid').toLowerCase()) {
+        switch (this._style('--style', 'solid').toLowerCase()) {
             case 'solid':
                 this._root.innerHTML += This._svg.SOLID;
                 break;
             case 'split':
-                this._root.innerHTML += this._styleProp('direction', 'ltr') == 'ltr' ?
+                this._root.innerHTML += this._style('direction', 'ltr') == 'ltr' ?
                                         This._svg.LTR : This._svg.RTL
                 break;
             default:
@@ -731,22 +744,21 @@ class Fader extends RangeInputWidget {
         }
 
         this.style.display = 'block';
-
-        this._readAttrValue();
+        this._redraw();
     }
 
     _redraw() {
-        const body = this._root.getElementById('body');
-        const value = this._root.getElementById('value');
-        const pointer = this._root.getElementById('pointer');
+        const body = this._root.getElementById('body'),
+              value = this._root.getElementById('value'),
+              pointer = this._root.getElementById('pointer');
 
         if (!body) {
             return;
         }
 
-        pointer.style.fill = this.value == 0 ? this._styleProp('--pointer-off-color', '#000') 
-                    : this._styleProp('--pointer-on-color', window.getComputedStyle(value).stroke);
-        pointer.style.stroke = this._styleProp('--pointer-border-color',
+        pointer.style.fill = this.value == 0 ? this._style('--pointer-off-color', '#000') 
+                    : this._style('--pointer-on-color', window.getComputedStyle(value).stroke);
+        pointer.style.stroke = this._style('--pointer-border-color',
                                 window.getComputedStyle(body).fill);
 
         const y = 100 * (1.0 - this.value);
@@ -807,9 +819,10 @@ class Button extends InputWidget {
         return 'button';
     }
 
-    static get _attrOptDescriptor() {
-        return super._attrOptDescriptor.concat([
-            { key: 'mode', parser: ValueParser.string, default: 'momentary' }
+    static get _attributeDescriptors() {
+        return super._attributeDescriptors.concat([
+            { key: 'value', parser: ValueParser.bool  , default: false       },
+            { key: 'mode' , parser: ValueParser.string, default: 'momentary' }
         ]);
     }
 
@@ -823,10 +836,10 @@ class Button extends InputWidget {
     connectedCallback() {
         super.connectedCallback();
 
-        this._color = this._styleProp('color', /*rgb(0,0,0)*/);
-        this._backgroundColor = this._styleProp('background-color' /*rgb(0,0,0)*/);
-        this._borderColor = this._styleProp('border-color' /*rgb(0,0,0)*/);
-        this._selectedColor = this._styleProp('--selected-color', '#000');       
+        this._color = this._style('color', /*rgb(0,0,0)*/);
+        this._backgroundColor = this._style('background-color' /*rgb(0,0,0)*/);
+        this._borderColor = this._style('border-color' /*rgb(0,0,0)*/);
+        this._selectedColor = this._style('--selected-color', '#000');       
 
         this._root.innerHTML = `<div style="
                                   width: 100%;
@@ -854,9 +867,9 @@ class Button extends InputWidget {
         });
 
         this._root.appendChild(slot);
-
-        this.value = ValueParser.bool(this._attr('value'), false);
         this.style.display = 'inline-block';
+
+        this._redraw();
     }
 
     _redraw() {
@@ -910,8 +923,8 @@ class ResizeHandle extends InputWidget {
         return 'resize';
     }
 
-    static get _attrOptDescriptor() {
-        return super._attrOptDescriptor.concat([
+    static get _attributeDescriptors() {
+        return super._attributeDescriptors.concat([
             { key: 'minWidth'       , parser: ValueParser.int  , default: 100   },
             { key: 'minHeight'      , parser: ValueParser.int  , default: 100   },
             { key: 'maxWidth'       , parser: ValueParser.int  , default: 0     },
@@ -980,18 +993,18 @@ class ResizeHandle extends InputWidget {
         this.style.right = '0px';
         this.style.bottom = '0px';
 
-        if (parseInt(this._styleProp('width')) == 0) {
+        if (parseInt(this._style('width')) == 0) {
             this.style.width = '24px';
         }
 
-        if (parseInt(this._styleProp('height')) == 0) {
+        if (parseInt(this._style('height')) == 0) {
             this.style.height = '24px';
         }
 
         // Style property changes can be observed implementing MutableObserver
         // but that only works for built-in style properties and not custom.
 
-        const color = this._styleProp('--color', '#000');
+        const color = this._style('--color', '#000');
 
         this._root.innerHTML = `<style>
             path { fill: ${color}; }
@@ -1000,7 +1013,7 @@ class ResizeHandle extends InputWidget {
 
         const svg = this.constructor._svg;
 
-        switch (this._styleProp('--graphic', 'lines').toLowerCase()) {
+        switch (this._style('--graphic', 'lines').toLowerCase()) {
             case 'lines':
             case 'lines-1':
                 this._root.innerHTML += svg.LINES_1;

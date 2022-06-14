@@ -32,6 +32,7 @@ export default await (async () => {
 
     return {
         Widget: Widget,
+        StatefulWidget: StatefulWidget,
         InputWidget: InputWidget,
         RangeInputWidget: RangeInputWidget,
         ControlEvent: ControlEvent,
