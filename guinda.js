@@ -848,9 +848,7 @@ class Button extends InputWidget {
                                   width: 100%;
                                   height: 100%;
                                   display: flex;
-                                  flex-direction: column;
-                                  justify-content: center;
-                                  text-align: center;
+                                  align-items: center;
                                   cursor: default">
                                 </div>`;
 
@@ -862,10 +860,13 @@ class Button extends InputWidget {
             if (updating) {
                 updating = false;
             } else {
+                // Move <g-button> children to <div>
                 updating = true;
-                const node = ev.target.assignedNodes()[0];
-                this._root.querySelector('div').textContent = node.textContent;
-                node.textContent = '';
+                const div = this._root.querySelector('div');
+                for (let node of ev.target.assignedNodes()) {
+                    div.appendChild(node.cloneNode(true));
+                    this.removeChild(node);
+                }
             }
         });
 
