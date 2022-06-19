@@ -7,8 +7,6 @@
 
     <title>Guinda</title>
     
-    <script src="guinda.js"></script>
-    
     <style>
 
     g-knob {
@@ -54,7 +52,6 @@
   <body>
 
     <h2><a href="https://github.com/lucianoiam/guinda" target="_blank">Guinda</a></h2>
-    <span id="watermark" class="hint">Alpha</span>
     <hr>
 
     <div id="widgets">
@@ -152,12 +149,6 @@
         stroke: #000; /* lines version */
     }
 
-    #watermark {
-        position: fixed;
-        top: 25px;
-        right: 25px;
-    }
-
     #log {
         background-color: rgba(0, 0, 0, 0.75);
         position: fixed;
@@ -212,10 +203,10 @@
 
         // Insert widget HTML before each widget
 
-        const widgetClone = widget.cloneNode();
+        const widgetClone = widget.cloneNode(true);
         widgetClone.removeAttribute('style');
         const preWithHtml = document.createElement('pre');
-        preWithHtml.innerText = widgetClone.outerHTML;
+        preWithHtml.innerText = widgetClone.outerHTML.replace(/\s+/g, ' ').replace('> <', '><');
         container.insertBefore(preWithHtml, insertPointElem);
 
         // Insert widget CSS after each widget
@@ -268,6 +259,9 @@
     }
 
     </script>
+    
+    <!-- Keep script at the end so the self-updating demo can read the intact document html -->
+    <script src="guinda.js"></script>
 
   </body>
 

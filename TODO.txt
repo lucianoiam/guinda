@@ -1,3 +1,2 @@
-- Image buttons
 - Segmented/continuous circular progress widget
 - VU meter widget
