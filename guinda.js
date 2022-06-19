@@ -865,6 +865,7 @@ class Button extends InputWidget {
                 // Move <g-button> children to <div>
                 updating = true;
                 const div = this._root.querySelector('div');
+                div.innerHTML = '';
                 for (let node of ev.target.assignedNodes()) {
                     div.appendChild(node.cloneNode(true));
                     this.removeChild(node);
@@ -1096,4 +1097,4 @@ class ResizeHandle extends InputWidget {
  *  Static library initialization
  */
 
-[Knob, Fader, ResizeHandle, Button].forEach((cls) => cls.defineCustomElement());
+[Knob, Fader, Button, ResizeHandle].forEach((cls) => cls.defineCustomElement());
