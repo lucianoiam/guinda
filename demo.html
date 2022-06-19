@@ -24,6 +24,7 @@
     g-fader {
         width: 37px;
         height: 185px;
+        --graphic: lines;
         --body-color: #404040;
         --range-color: #404040;
         --value-color: #fff;
@@ -38,7 +39,7 @@
         border-radius: 0.3em;
         color: #fff;
         background-color: #404040;
-        --selected-color: #000;
+        --selected-color: #404040;
     }
 
     g-resize {
@@ -73,7 +74,7 @@
         <g-fader
             min="0"
             max="1.0"
-            value="0.75"
+            value="0.25"
             oninput="toast(this.value.toFixed(2))">
         </g-fader>
 

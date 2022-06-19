@@ -695,21 +695,20 @@ class Fader extends RangeInputWidget {
 
     static _initialize() {
         this._svg = {
-            SOLID: `<svg width="100%" height="100%">
+            LINES: `<svg width="100%" height="100%">
                     <rect id="body" width="100%" height="100%" />
-                    <line id="value" y2="100%" stroke-width="100%" />
-                    <circle id="pointer" cx="50%" cy="20%" r="3.5" stroke-width="1%" />
+                    <line id="value" y2="100%" stroke-width="100%" stroke-dasharray="7,1" />
                   </svg>`,
             LTR: `<svg width="100%" height="100%">
-                    <line id="range" x1="5%" x2="5%" y2="100%" y1="0" stroke-width="6%" />
-                    <line id="value" x1="5%" x2="5%" y2="100%" stroke-width="6%" />
-                    <rect id="body" width="81%" height="100%" x="19%" />
+                    <line id="range" x1="5%" x2="5%" y2="100%" y1="0" stroke-width="7%" />
+                    <line id="value" x1="5%" x2="5%" y2="100%" stroke-width="7%" />
+                    <rect id="body" width="80%" height="100%" x="20%" />
                     <circle id="pointer" cx="60%" cy="20%" r="3.5" />
                   </svg>`,
             RTL: `<svg width="100%" height="100%">
-                    <line id="range" x1="94%" x2="94%" y2="100%" y1="0" stroke-width="6%" />
-                    <line id="value" x1="94%" x2="94%" y2="100%" stroke-width="6%" />
-                    <rect id="body" width="81%" height="100%" />
+                    <line id="range" x1="95%" x2="95%" y2="100%" y1="0" stroke-width="7%" />
+                    <line id="value" x1="95%" x2="95%" y2="100%" stroke-width="7%" />
+                    <rect id="body" width="80%" height="100%" />
                     <circle id="pointer" cx="40%" cy="20%" r="3.5" />
                   </svg>`
         };
@@ -734,9 +733,9 @@ class Fader extends RangeInputWidget {
         
         const This = this.constructor;
 
-        switch (this._style('--style', 'solid').toLowerCase()) {
-            case 'solid':
-                this._root.innerHTML += This._svg.SOLID;
+        switch (this._style('--graphic', 'lines').toLowerCase()) {
+            case 'lines':
+                this._root.innerHTML += This._svg.LINES;
                 break;
             case 'split':
                 this._root.innerHTML += this._style('direction', 'ltr') == 'ltr' ?
@@ -759,15 +758,16 @@ class Fader extends RangeInputWidget {
             return;
         }
 
-        pointer.style.fill = this.value == 0 ? this._style('--pointer-off-color', '#000') 
-                    : this._style('--pointer-on-color', window.getComputedStyle(value).stroke);
-        pointer.style.stroke = this._style('--pointer-border-color',
-                                window.getComputedStyle(body).fill);
-
         const y = 100 * (1.0 - this.value);
-
         value.setAttribute('y1', `${y}%`);
-        pointer.setAttribute('cy', `${y}%`);
+
+        if (pointer) {
+            pointer.style.fill = this.value == 0 ? this._style('--pointer-off-color', '#000') 
+                        : this._style('--pointer-on-color', window.getComputedStyle(value).stroke);
+            pointer.style.stroke = this._style('--pointer-border-color',
+                                    window.getComputedStyle(body).fill);
+            pointer.setAttribute('cy', `${y}%`);
+        }
     }
 
     /**
