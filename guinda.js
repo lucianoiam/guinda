@@ -778,6 +778,8 @@ class Fader extends RangeInputWidget {
        if (ev.isInputTouch || ev.isInputWheel) {
             this._startValue = this._value;
             this._dragDistance = 0;
+        } else {
+            this._onMove(ev);
         }
     }
 
