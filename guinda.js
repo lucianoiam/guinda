@@ -359,10 +359,12 @@ function ControlTrait(opt) {
     // Simulate touch behavior for mouse, for example react to move events outside element
 
     this.addEventListener('mousedown', (ev) => {
-        window.addEventListener('mousemove', mouseMoveListener);
-        window.addEventListener('mouseup', mouseUpListener);
+        if (ev.button == 0) {
+            window.addEventListener('mousemove', mouseMoveListener);
+            window.addEventListener('mouseup', mouseUpListener);
 
-        dispatchControlStart(ev, ev.clientX, ev.clientY);
+            dispatchControlStart(ev, ev.clientX, ev.clientY);
+        }
     });
 
     // Special treatment for wheel: custom start, continue and end events
@@ -777,7 +779,7 @@ class Fader extends RangeInputWidget {
     _onGrab(ev) {
         this._startValue = this._value;
         this._dragDistance = 0;
-        
+
         this._onMove(ev);
     }
 
