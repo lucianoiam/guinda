@@ -775,40 +775,23 @@ class Fader extends RangeInputWidget {
      */
 
     _onGrab(ev) {
-       if (ev.isInputTouch || ev.isInputWheel) {
-            this._startValue = this._value;
-            this._dragDistance = 0;
-        } else {
-            this._onMove(ev);
-        }
+        this._startValue = this._value;
+        this._dragDistance = 0;
+        
+        this._onMove(ev);
     }
 
     _onMove(ev) {
-        if (ev.isInputTouch || ev.isInputWheel) {
-            document.body.style.cursor = ev.isInputWheel ? 'ns-resize' : 'none';
+        document.body.style.cursor = ev.isInputWheel ? 'ns-resize' : 'none';
 
-            const dmov = -ev.deltaY / this.clientHeight;
-            const k0 = 0.1;
-            const k1 = 2.0 * (dmov < 0 ? -1 : 1);
+        const y = (ev.clientY - this.getBoundingClientRect().top) / this.clientHeight;
+        const val = 1.0 - Math.max(0, Math.min(1.0, y));
 
-            this._dragDistance += k0 * dmov + k1 * Math.pow(dmov, 2);
-
-            const dval = this._dragDistance * this.opt.sensibility;
-            const val = Math.max(0, Math.min(1.0, this._startValue + dval));
-
-            this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
-        } else if (ev.isInputMouse) {
-            const y = (ev.clientY - this.getBoundingClientRect().top) / this.clientHeight;
-            const val = 1.0 - Math.max(0, Math.min(1.0, y));
-
-            this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
-        }
+        this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
     }
 
     _onRelease(ev) {
-        if (ev.isInputTouch || ev.isInputWheel) {
-            document.body.style.cursor = null;
-        }
+        document.body.style.cursor = null;
     }
 
 }
