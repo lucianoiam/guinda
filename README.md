@@ -72,12 +72,3 @@ knob.opt.min = 0;
 
 knob.setAttribute('max', 1.0);
 
-```
-
-The library can be imported as a module. Note that the module version simply
-consists in a shim that loads the regular version and exports its symbols.
-```JavaScript
-import Guinda from './guinda.mjs';
-
-const knob = new Guinda.Knob({min: 0, max: 1});
-```
