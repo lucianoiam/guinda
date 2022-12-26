@@ -54,7 +54,7 @@ knob.addEventListener('input', (ev) => {
 
 });
 
-document.body.addChild(knob);
+document.body.appendChild(knob);
 ```
 
 Options can be passed at instantiation time using the `new` operator:
