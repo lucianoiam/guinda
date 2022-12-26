@@ -150,14 +150,17 @@ class StatefulWidget extends Widget {
 
     constructor(opt) {
         super(opt);
-        this._value = null;
+
+        // https://jsfiddle.net/3ad5q6cz/10/
+        this._value = this.value;
+        delete this.value;
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         super.attributeChangedCallback(name, oldValue, newValue);
 
         // Do not read value attribute if this.value is already set
-        if ((name == 'value') && (this._value === null)) {
+        if ((name == 'value') && (typeof(this._value) === 'undefined')) {
             const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
 
             if (typeof(attrDesc) !== 'undefined') {
@@ -271,7 +274,8 @@ class RangeInputWidget extends InputWidget {
 
     _optionUpdated(key, value) {
         super._optionUpdated(key, value);
-        this.value = this._denormalizedValue;
+        // FIXME
+        //this.value = this._denormalizedValue;
     }
 
     _setNormalizedValueAndDispatchInputEventIfNeeded(newValue) {
