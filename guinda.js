@@ -196,7 +196,12 @@ class StatefulWidget extends Widget {
      */
 
     _readAttrValue() {
+        if (this._value !== null) {
+            return; // do not overwrite value with default if already set
+        }
+
         const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
+
         if (typeof(attrDesc) !== 'undefined') {
             this.value = attrDesc.parser(this._attr('value'), attrDesc.default);
         }
