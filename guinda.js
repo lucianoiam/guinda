@@ -153,15 +153,16 @@ class StatefulWidget extends Widget {
         this._value = null;
     }
 
-    connectedCallback() {
-        super.connectedCallback();
-        this._readAttrValue();
-    }
-
     attributeChangedCallback(name, oldValue, newValue) {
         super.attributeChangedCallback(name, oldValue, newValue);
-        if (name == 'value') {
-            this._readAttrValue();
+
+        // Do not read value attribute if this.value is already set
+        if ((name == 'value') && (this._value === null)) {
+            const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
+
+            if (typeof(attrDesc) !== 'undefined') {
+                this.value = attrDesc.parser(this._attr('value'), attrDesc.default);
+            }
         }
     }
 
@@ -189,22 +190,6 @@ class StatefulWidget extends Widget {
         const ev = new Event('setvalue');
         ev.value = val;
         this.dispatchEvent(ev);
-    }
-
-    /**
-     * Private
-     */
-
-    _readAttrValue() {
-        if (this._value !== null) {
-            return; // do not overwrite value with default if already set
-        }
-
-        const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
-
-        if (typeof(attrDesc) !== 'undefined') {
-            this.value = attrDesc.parser(this._attr('value'), attrDesc.default);
-        }
     }
 
 }
@@ -256,7 +241,12 @@ class RangeInputWidget extends InputWidget {
     /**
      *  Public
      */
-    
+        
+    constructor(opt) {
+        super(opt);
+        this._denormalizedValue = null;
+    }
+
     get value() {
         return this._denormalize(super.value);
     }
@@ -299,14 +289,17 @@ class RangeInputWidget extends InputWidget {
     }
 
     _clamp(value) {
+        if (typeof value !== 'number') return value;
         return Math.max(this.opt.min, Math.min(this.opt.max, value));
     }
 
     _normalize(value) {
+        if (typeof value !== 'number') return value;
         return this._scale.normalize(value, this.opt.min, this.opt.max);
     }
 
     _denormalize(value) {
+        if (typeof value !== 'number') return value;
         return this._scale.denormalize(value, this.opt.min, this.opt.max);
     }
 
