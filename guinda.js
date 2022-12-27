@@ -151,6 +151,7 @@ class StatefulWidget extends Widget {
     constructor(opt) {
         super(opt);
 
+        // Needed for compatibility with LemonadeJS
         // https://jsfiddle.net/3ad5q6cz/10/
         this._value = this.value;
         delete this.value;
@@ -158,22 +159,17 @@ class StatefulWidget extends Widget {
     
     connectedCallback() {
         super.connectedCallback();
-    
+
         if (typeof(this._value) === 'undefined') {
-            this.value = 0;
+            this._readAttrValue();
         }
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         super.attributeChangedCallback(name, oldValue, newValue);
 
-        // Do not read value attribute if this.value is already set
         if ((name == 'value') && (typeof(this._value) === 'undefined')) {
-            const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
-
-            if (typeof(attrDesc) !== 'undefined') {
-                this.value = attrDesc.parser(this._attr('value'), attrDesc.default);
-            }
+            this._readAttrValue();
         }
     }
 
@@ -201,6 +197,18 @@ class StatefulWidget extends Widget {
         const ev = new Event('setvalue');
         ev.value = val;
         this.dispatchEvent(ev);
+    }
+
+    /**
+     *  Private
+     */
+
+    _readAttrValue() {
+        const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
+
+        if (typeof(attrDesc) !== 'undefined') {
+            this.value = attrDesc.parser(this._attr('value'), attrDesc.default);
+        }
     }
 
 }
