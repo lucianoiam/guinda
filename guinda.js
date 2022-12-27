@@ -155,6 +155,14 @@ class StatefulWidget extends Widget {
         this._value = this.value;
         delete this.value;
     }
+    
+    connectedCallback() {
+        super.connectedCallback();
+    
+        if (typeof(this._value) === 'undefined') {
+            this.value = 0;
+        }
+    }
 
     attributeChangedCallback(name, oldValue, newValue) {
         super.attributeChangedCallback(name, oldValue, newValue);
