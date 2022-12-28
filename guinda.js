@@ -88,8 +88,7 @@ class Widget extends HTMLElement {
         const desc = This._attributeDescriptors.find(d => name == d.key.toLowerCase());
 
         if (desc) {
-            const valStr = this._attr(desc.key.toLowerCase());
-            const val = desc.parser(valStr, null);
+            const val = desc.parser(newValue, null);
 
             if (val !== null) {
                 this.opt[desc.key] = val;
@@ -122,6 +121,12 @@ class Widget extends HTMLElement {
         return attr ? attr.value : def;
     }
 
+    _parsedAttr(name) {
+        const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == name);
+        return (typeof(attrDesc) !== 'undefined') ?
+            attrDesc.parser(this._attr(name), attrDesc.default) : null;
+    }
+
     _style(name, def) {
         const prop = getComputedStyle(this).getPropertyValue(name).trim();
         return prop.length > 0 ? prop : def;
@@ -151,7 +156,7 @@ class StatefulWidget extends Widget {
     constructor(opt) {
         super(opt);
 
-        // Needed for compatibility with LemonadeJS
+        // Needed for libraries which overwrite this.value, e.g. LemonadeJS
         // https://jsfiddle.net/3ad5q6cz/10/
         this._value = this.value;
         delete this.value;
@@ -160,16 +165,16 @@ class StatefulWidget extends Widget {
     connectedCallback() {
         super.connectedCallback();
 
-        if (typeof(this._value) === 'undefined') {
-            this._readAttrValue();
+        if (typeof(this._value) !== 'number') { // may have value before attaching
+            this.value = this._parsedAttr('value'); // initial value
         }
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         super.attributeChangedCallback(name, oldValue, newValue);
 
-        if ((name == 'value') && (typeof(this._value) === 'undefined')) {
-            this._readAttrValue();
+        if (name == 'now') {
+            this.value = this._parsedAttr('now'); // instantaneous value
         }
     }
 
@@ -197,18 +202,6 @@ class StatefulWidget extends Widget {
         const ev = new Event('setvalue');
         ev.value = val;
         this.dispatchEvent(ev);
-    }
-
-    /**
-     *  Private
-     */
-
-    _readAttrValue() {
-        const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == 'value');
-
-        if (typeof(attrDesc) !== 'undefined') {
-            this.value = attrDesc.parser(this._attr('value'), attrDesc.default);
-        }
     }
 
 }
@@ -282,6 +275,7 @@ class RangeInputWidget extends InputWidget {
     static get _attributeDescriptors() {
         return super._attributeDescriptors.concat([
             { key: 'value', parser: ValueParser.float, default: 0 },
+            { key: 'now'  , parser: ValueParser.float, default: 0 },
             { key: 'min'  , parser: ValueParser.float, default: 0 },
             { key: 'max'  , parser: ValueParser.float, default: 1 },
             { key: 'scale', parser: ValueParser.scale, default: ValueScale.linear }
@@ -290,8 +284,7 @@ class RangeInputWidget extends InputWidget {
 
     _optionUpdated(key, value) {
         super._optionUpdated(key, value);
-        // FIXME
-        //this.value = this._denormalizedValue;
+        this.value = this._denormalizedValue;
     }
 
     _setNormalizedValueAndDispatchInputEventIfNeeded(newValue) {
@@ -842,6 +835,7 @@ class Button extends InputWidget {
     static get _attributeDescriptors() {
         return super._attributeDescriptors.concat([
             { key: 'value'    , parser: ValueParser.bool  , default: false       },
+            { key: 'now'      , parser: ValueParser.bool  , default: false       },
             { key: 'feedback' , parser: ValueParser.bool  , default: true        },
             { key: 'mode'     , parser: ValueParser.string, default: 'momentary' }
         ]);
