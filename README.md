@@ -45,8 +45,8 @@ Programmatically:
 ```JavaScript
 const knob = document.createElement('g-knob');
 
-knob.opt.min = 0;
-knob.opt.max = 1;
+knob.props.min = 0;
+knob.props.max = 1;
 
 knob.addEventListener('input', (ev) => {
 
@@ -57,18 +57,18 @@ knob.addEventListener('input', (ev) => {
 document.body.appendChild(knob);
 ```
 
-Options can be passed at instantiation time using the `new` operator:
+Properties can be passed at instantiation time using the `new` operator:
 
 ```JavaScript
 const knob = new Knob({min: 0, max: 1});
 ```
 
-Options can be also updated any time after instantiation:
+Properties can be also updated any time after instantiation:
 
 ```JavaScript
 const knob = new Knob();
 
-knob.opt.min = 0;
+knob.props.min = 0;
 
 knob.setAttribute('max', 1.0);
 

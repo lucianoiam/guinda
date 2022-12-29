@@ -31,22 +31,22 @@ class Widget extends HTMLElement {
         window.customElements.define(`g-${this._unqualifiedNodeName}`, this);
     }
 
-    constructor(opt) {
+    constructor(props) {
         super();
 
-        // Set options and start observing changes. Options passed to the
+        // Set properties and start observing changes. Properties passed to the
         // constructor will be overwritten by matching HTML attributes before
         // connectedCallback() is called.
 
         let updating = false;
 
-        this._opt = new Proxy(opt || {}, {
+        this._props = new Proxy(props || {}, {
             set: (obj, prop, value) => {
                 obj[prop] = value;
 
                 if (!updating) {
                     updating = true;
-                    this._optionUpdated(prop, value);
+                    this._propertyUpdated(prop, value);
                     updating = false;
                 } else {
                     // Avoid recursion
@@ -56,11 +56,11 @@ class Widget extends HTMLElement {
             }
         });
 
-        // Fill in any missing option values using defaults
+        // Fill in any missing property values using defaults
 
         for (const desc of this.constructor._attributeDescriptors) {
-            if (!(desc.key in this.opt) && (typeof(desc.default) !== 'undefined')) {
-                this.opt[desc.key] = desc.default;
+            if (!(desc.key in this.props) && (typeof(desc.default) !== 'undefined')) {
+                this.props[desc.key] = desc.default;
             }
         }
 
@@ -68,12 +68,12 @@ class Widget extends HTMLElement {
         // only works for built-in style properties and not custom as of 2022.
     }
 
-    get opt() {
-        return this._opt;
+    get props() {
+        return this._props;
     }
 
-    set opt(opt) {
-        Object.assign(this._opt, opt); // merge
+    set props(props) {
+        Object.assign(this._props, props); // merge
     }
 
     // Custom element lifecycle callbacks
@@ -91,7 +91,7 @@ class Widget extends HTMLElement {
             const val = desc.parser(newValue, null);
 
             if (val !== null) {
-                this.opt[desc.key] = val;
+                this.props[desc.key] = val;
             }
         }
     }
@@ -132,7 +132,7 @@ class Widget extends HTMLElement {
         return prop.length > 0 ? prop : def;
     }
 
-    _optionUpdated(key, value) {
+    _propertyUpdated(key, value) {
         // Default empty implementation
     }
 
@@ -153,8 +153,8 @@ class StatefulWidget extends Widget {
      *  Public
      */
 
-    constructor(opt) {
-        super(opt);
+    constructor(props) {
+        super(props);
 
         // Needed for libraries which overwrite this.value, e.g. LemonadeJS
         // https://jsfiddle.net/3ad5q6cz/10/
@@ -217,9 +217,9 @@ class InputWidget extends StatefulWidget {
      *  Public
      */
 
-    constructor(opt) {
-        super(opt);
-        ControlTrait.apply(this, [opt]);
+    constructor(props) {
+        super(props);
+        ControlTrait.apply(this, [props]);
     }
 
     /**
@@ -254,8 +254,8 @@ class RangeInputWidget extends InputWidget {
      *  Public
      */
         
-    constructor(opt) {
-        super(opt);
+    constructor(props) {
+        super(props);
         this._denormalizedValue = null;
     }
 
@@ -282,8 +282,8 @@ class RangeInputWidget extends InputWidget {
         ]);
     }
 
-    _optionUpdated(key, value) {
-        super._optionUpdated(key, value);
+    _propertyUpdated(key, value) {
+        super._propertyUpdated(key, value);
         this.value = this._denormalizedValue;
     }
 
@@ -303,21 +303,21 @@ class RangeInputWidget extends InputWidget {
 
     _clamp(value) {
         if (typeof value !== 'number') return value;
-        return Math.max(this.opt.min, Math.min(this.opt.max, value));
+        return Math.max(this.props.min, Math.min(this.props.max, value));
     }
 
     _normalize(value) {
         if (typeof value !== 'number') return value;
-        return this._scale.normalize(value, this.opt.min, this.opt.max);
+        return this._scale.normalize(value, this.props.min, this.props.max);
     }
 
     _denormalize(value) {
         if (typeof value !== 'number') return value;
-        return this._scale.denormalize(value, this.opt.min, this.opt.max);
+        return this._scale.denormalize(value, this.props.min, this.props.max);
     }
 
     get _scale() {
-        return this.opt.scale || ValueScale.linear;
+        return this.props.scale || ValueScale.linear;
     }
 
 }
@@ -331,8 +331,8 @@ class ControlEvent extends UIEvent {}
 
 // Merges touch and mouse input events into a single basic set of custom events
 
-function ControlTrait(opt) {
-    opt = opt || {}; // currently unused
+function ControlTrait(props) {
+    props = props || {}; // currently unused
 
     this._controlStarted = false;
     this._controlTimeout = null;
@@ -678,7 +678,7 @@ class Knob extends RangeInputWidget {
 
         this._dragDistance += k0 * dmov + k1 * Math.pow(dmov, 2);
 
-        const dval = this._dragDistance * this.opt.sensibility;
+        const dval = this._dragDistance * this.props.sensibility;
         const val = Math.max(0, Math.min(1.0, this._startValue + dval));
 
         this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
@@ -803,7 +803,7 @@ class Fader extends RangeInputWidget {
         if (ev.isInputWheel) {
             this._dragDistance += -0.1 * ev.deltaY / this.clientHeight;
 
-            const dval = this._dragDistance * this.opt.sensibility;
+            const dval = this._dragDistance * this.props.sensibility;
             const val = Math.max(0, Math.min(1.0, this._startValue + dval));
 
             this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
@@ -901,7 +901,7 @@ class Button extends InputWidget {
     }
 
     _redraw() {
-        if (! this._opt['feedback']) {
+        if (! this._props['feedback']) {
             return;
         }
         
@@ -925,9 +925,9 @@ class Button extends InputWidget {
             return;
         }
 
-        if (this.opt.mode == 'momentary') {
+        if (this.props.mode == 'momentary') {
             this._setValueAndDispatchInputEventIfNeeded(true);
-        } else if (this.opt.mode == 'latch') {
+        } else if (this.props.mode == 'latch') {
             this._setValueAndDispatchInputEventIfNeeded(! this.value);
         }
     }
@@ -937,7 +937,7 @@ class Button extends InputWidget {
             return;
         }
 
-        if (this.opt.mode == 'momentary') {
+        if (this.props.mode == 'momentary') {
             this._setValueAndDispatchInputEventIfNeeded(false);
         }
     }
@@ -1058,15 +1058,15 @@ class ResizeHandle extends InputWidget {
         }
     }
 
-    _optionUpdated(key, value) {
-        super._optionUpdated(key, value);
+    _propertyUpdated(key, value) {
+        super._propertyUpdated(key, value);
 
-        if (this.opt.maxScale > 0) {
-            this.opt.maxWidth = this.opt.maxScale * this.opt.minWidth;
-            this.opt.maxHeight = this.opt.maxScale * this.opt.minHeight;
+        if (this.props.maxScale > 0) {
+            this.props.maxWidth = this.props.maxScale * this.props.minWidth;
+            this.props.maxHeight = this.props.maxScale * this.props.minHeight;
         }
 
-        this._aspectRatio = this.opt.minWidth / this.opt.minHeight;
+        this._aspectRatio = this.props.minWidth / this.props.minHeight;
     }
 
     /**
@@ -1091,12 +1091,12 @@ class ResizeHandle extends InputWidget {
         const deltaY = useMouseDelta ? ev.originalEvent.movementY : ev.deltaY;
         
         let newWidth = this._width + deltaX;
-        newWidth = Math.max(this.opt.minWidth, Math.min(this.opt.maxWidth, newWidth));
+        newWidth = Math.max(this.props.minWidth, Math.min(this.props.maxWidth, newWidth));
 
         let newHeight = this._height + deltaY;
-        newHeight = Math.max(this.opt.minHeight, Math.min(this.opt.maxHeight, newHeight));
+        newHeight = Math.max(this.props.minHeight, Math.min(this.props.maxHeight, newHeight));
 
-        if (this.opt.keepAspectRatio) {
+        if (this.props.keepAspectRatio) {
             if (deltaX > deltaY) {
                 newHeight = newWidth / this._aspectRatio;
             } else {
