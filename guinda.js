@@ -1122,4 +1122,5 @@ class ResizeHandle extends InputWidget {
  *  Static library initialization
  */
 
-[Knob, Fader, Button, ResizeHandle].forEach((cls) => cls.defineCustomElement());
+window.Guinda = { Knob, Fader, Button, ResizeHandle };
+Object.values(window.Guinda).forEach((cls) => cls.defineCustomElement());
