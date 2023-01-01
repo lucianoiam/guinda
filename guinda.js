@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+(() => {
+
  /**
   *  Base class for all widgets
   */
@@ -1124,3 +1126,5 @@ class ResizeHandle extends InputWidget {
 
 window.Guinda = { Knob, Fader, Button, ResizeHandle };
 Object.values(window.Guinda).forEach((cls) => cls.defineCustomElement());
+
+})();

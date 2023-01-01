@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+(() => {
+
 class GuindaComponent extends React.Component {
 
     constructor() {
@@ -78,3 +80,5 @@ Guinda.React.ButtonComponent.defaultProps = {
     now: false,
     defaultValue: false
 };
+
+})();
