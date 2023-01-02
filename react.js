@@ -23,30 +23,53 @@ class GuindaComponent extends React.Component {
     constructor() {
         super();
 
-        this.ref = React.createRef(); 
+        this.ref = React.createRef();
         this.valueParser = this.constructor._attributeDescriptors.find(d => d.key == 'value').parser;
     }
 
     render() {
-        const props = Object.assign({}, this.props);
+        const propsCopy = Object.assign({}, this.props);
 
-        props.ref = this.ref;
-        props.value = this.valueParser(this.props.value); // initial value
+        propsCopy.ref = this.ref;
+        propsCopy.value = this.valueParser(this.props.value); // initial value
 
-        props.onInputCapture = (ev) => {
+        // Preact handles input event automatically, React does not -- why?
+        // Match behavior between both libraries
+        delete propsCopy.onInput;
+
+        this._handleInputEvent = (ev) => {
             if (this.props.onInput) {
-                this.props.onInput(ev.nativeEvent || /*Preact*/ev);
-                ev.stopPropagation(); // Preact
+                this.props.onInput(ev);
             }
-        }
 
-        // React - update value. Not needed for Preact?
-        if (this.ref.current) {
-            this.ref.current.value = this.valueParser(this.props.value);
-        }
+            this.onInput(ev);
+        };
 
-        return React.createElement(this.constructor._tagName, props);
+        return React.createElement(this.constructor._tagName, propsCopy);
     }
+
+    componentDidMount() {
+        this.htmlElement.addEventListener('input', this._handleInputEvent);
+    }
+
+    componentWillUnmount() {
+        this.htmlElement.removeEventListener('input', this._handleInputEvent);
+    }
+
+    // Preact updates element value automatically, React does not -- why?
+    componentDidUpdate() {
+        if (this.htmlElement) {
+            this.htmlElement.value = this.valueParser(this.props.value);
+        }
+    }
+
+    // Convenience getter for the underlying HTML element
+    get htmlElement() {
+        return this.ref.current;
+    }
+
+    // Convenience callback for subclasses
+    onInput(ev) {}
 
 }
 
