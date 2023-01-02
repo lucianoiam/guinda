@@ -23,40 +23,29 @@ class GuindaComponent extends React.Component {
     constructor() {
         super();
 
-        this.ref = React.createRef();
+        this.ref = React.createRef(); 
         this.valueParser = this.constructor._attributeDescriptors.find(d => d.key == 'value').parser;
-
-        this._onInput = (ev) => {
-            if (this.props.onInput) {
-                this.props.onInput(ev);
-            }
-        };
     }
 
     render() {
         const props = Object.assign({}, this.props);
 
         props.ref = this.ref;
-        props.value = this.valueParser(this.props.value);
+        props.value = this.valueParser(this.props.value); // initial value
 
-        // Do not allow Preact to attach its own listener to the wrapped element
-        // TODO : looks like a hack, do some research.
-        props.onInput = null;
+        props.onInputCapture = (ev) => {
+            if (this.props.onInput) {
+                this.props.onInput(ev.nativeEvent || /*Preact*/ev);
+                ev.stopPropagation(); // Preact
+            }
+        }
+
+        // React - update value. Not needed for Preact?
+        if (this.ref.current) {
+            this.ref.current.value = this.valueParser(this.props.value);
+        }
 
         return React.createElement(this.constructor._tagName, props);
-    }
-    
-    componentDidMount() {
-        this.ref.current.addEventListener('input', this._onInput);
-    }
-
-    componentWillUnmount() {
-        this.ref.current.removeEventListener('input', this._onInput);
-    }
-    
-    // TODO : why this is not needed for Preact?
-    componentDidUpdate() {
-        this.ref.current.value = this.valueParser(this.props.value);
     }
 
 }
