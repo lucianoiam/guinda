@@ -20,65 +20,42 @@
 
 class GuindaComponent extends React.Component {
 
-    constructor() {
-        super();
-        
-        this._onInput = (ev) => {
-            if (this.props.input) {
-                this.props.input(ev.value);
-            }
-
-            this.onInput(ev.value);
-        };
-    }
-
     render() {
-        this.ref = React.createRef();
+        const This = this.constructor,
+              valueParser = This._attributeDescriptors.find(d => d.key == 'value').parser,
+              props = this.props;           
 
-        let props = this.props;
-        props.ref = this.ref;
+        props.value = valueParser(this.props.value)
 
-        return React.createElement(this.constructor.tagName, props);
+        return React.createElement(This._tagName, props);
     }
-
-    componentDidMount() {
-        this.ref.current.addEventListener('input', this._onInput);
-    }
-
-    componentWillUnmount() {
-        this.ref.current.removeEventListener('input', this._onInput);
-    }
-
-    onInput(val) {}
 
 }
 
+const names = Object.keys(window.Guinda).filter(k => typeof(window.Guinda[k]) === 'function');
 window.Guinda.React = {};
-const names = Object.keys(window.Guinda);
 
 for (const name of names) {
     let cls = class extends GuindaComponent {};
-    cls.tagName = 'g-' + name.toLowerCase();
+    cls._tagName = 'g-' + name.toLowerCase();
+    cls._attributeDescriptors = window.Guinda[name]._attributeDescriptors;
     window.Guinda.React[name + 'Component'] = cls;
 }
 
 Guinda.React.KnobComponent.defaultProps = {
     min: 0,
     max: 1,
-    now: 0,
-    defaultValue: 0
+    value: 0
 };
 
 Guinda.React.FaderComponent.defaultProps = {
     min: 0,
     max: 1,
-    now: 0,
-    defaultValue: 0
+    value: 0
 };
 
 Guinda.React.ButtonComponent.defaultProps = {
-    now: false,
-    defaultValue: false
+    value: false
 };
 
 })();

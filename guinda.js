@@ -40,18 +40,19 @@ class Widget extends HTMLElement {
         // constructor will be overwritten by matching HTML attributes before
         // connectedCallback() is called.
 
-        let updating = false;
+        let propLock = false;
 
         this._props = new Proxy(props || {}, {
             set: (obj, prop, value) => {
                 obj[prop] = value;
 
-                if (!updating) {
-                    updating = true;
+                if (! propLock) {
+                    propLock = true;
                     this._propertyUpdated(prop, value);
-                    updating = false;
+                    propLock = false;
                 } else {
-                    // Avoid recursion
+                    // Avoid recursion, this._propertyUpdated()
+                    // can in turn update properties.
                 }
 
                 return true;
@@ -160,8 +161,10 @@ class StatefulWidget extends Widget {
 
         // Needed for libraries which overwrite this.value, e.g. LemonadeJS
         // https://jsfiddle.net/3ad5q6cz/10/
-        this._value = this.value;
-        delete this.value;
+        //this._value = this.value;
+        //delete this.value;
+
+        this._value = null;
     }
     
     connectedCallback() {
@@ -172,14 +175,6 @@ class StatefulWidget extends Widget {
         }
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        super.attributeChangedCallback(name, oldValue, newValue);
-
-        if (name == 'now') {
-            this.value = this._parsedAttr('now'); // instantaneous value
-        }
-    }
-
     get value() {
         return this._value;
     }
@@ -187,7 +182,6 @@ class StatefulWidget extends Widget {
     set value(newValue) {
         this._value = newValue;
         this._valueUpdated();
-        this._dispatchSetValueEvent(this.value);
     }
 
     /**
@@ -195,15 +189,11 @@ class StatefulWidget extends Widget {
      */
 
     _valueUpdated() {
-        if (this._root) {
-            this._redraw();
+        if (! this._root) {
+            return;
         }
-    }
 
-    _dispatchSetValueEvent(val) {
-        const ev = new Event('setvalue');
-        ev.value = val;
-        this.dispatchEvent(ev);
+        this._redraw();
     }
 
 }
@@ -258,7 +248,7 @@ class RangeInputWidget extends InputWidget {
         
     constructor(props) {
         super(props);
-        this._denormalizedValue = null;
+        this._scaledValue = null;
     }
 
     get value() {
@@ -266,7 +256,7 @@ class RangeInputWidget extends InputWidget {
     }
 
     set value(newValue) {
-        this._denormalizedValue = newValue;
+        this._scaledValue = newValue;
         super.value = this._normalize(this._clamp(newValue));
     }
 
@@ -277,7 +267,6 @@ class RangeInputWidget extends InputWidget {
     static get _attributeDescriptors() {
         return super._attributeDescriptors.concat([
             { key: 'value', parser: ValueParser.float, default: 0 },
-            { key: 'now'  , parser: ValueParser.float, default: 0 },
             { key: 'min'  , parser: ValueParser.float, default: 0 },
             { key: 'max'  , parser: ValueParser.float, default: 1 },
             { key: 'scale', parser: ValueParser.scale, default: ValueScale.linear }
@@ -286,7 +275,7 @@ class RangeInputWidget extends InputWidget {
 
     _propertyUpdated(key, value) {
         super._propertyUpdated(key, value);
-        this.value = this._denormalizedValue;
+        this.value = this._scaledValue;
     }
 
     _setNormalizedValueAndDispatchInputEventIfNeeded(newValue) {
@@ -294,13 +283,11 @@ class RangeInputWidget extends InputWidget {
             return;
         }
 
-        // Do not use this.value since newValue is already normalized
+        // Do not use this.value since newValue is already normalized [0-1.0]
         this._value = newValue;
         this._valueUpdated();
 
-        const dnval = this.value;
-        this._dispatchInputEvent(dnval);
-        this._dispatchSetValueEvent(dnval);
+        this._dispatchInputEvent(this.value);
     }
 
     _clamp(value) {
@@ -837,7 +824,6 @@ class Button extends InputWidget {
     static get _attributeDescriptors() {
         return super._attributeDescriptors.concat([
             { key: 'value'    , parser: ValueParser.bool  , default: false       },
-            { key: 'now'      , parser: ValueParser.bool  , default: false       },
             { key: 'feedback' , parser: ValueParser.bool  , default: true        },
             { key: 'mode'     , parser: ValueParser.string, default: 'momentary' }
         ]);
