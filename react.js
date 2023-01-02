@@ -20,14 +20,43 @@
 
 class GuindaComponent extends React.Component {
 
+    constructor() {
+        super();
+
+        this.ref = React.createRef();
+        this.valueParser = this.constructor._attributeDescriptors.find(d => d.key == 'value').parser;
+
+        this._onInput = (ev) => {
+            if (this.props.onInput) {
+                this.props.onInput(ev);
+            }
+        };
+    }
+
     render() {
-        const This = this.constructor,
-              valueParser = This._attributeDescriptors.find(d => d.key == 'value').parser,
-              props = this.props;           
+        const props = Object.assign({}, this.props);
 
-        props.value = valueParser(this.props.value)
+        props.ref = this.ref;
+        props.value = this.valueParser(this.props.value);
 
-        return React.createElement(This._tagName, props);
+        // Do not allow Preact to attach its own listener to the wrapped element
+        // TODO : looks like a hack, do some research.
+        props.onInput = null;
+
+        return React.createElement(this.constructor._tagName, props);
+    }
+    
+    componentDidMount() {
+        this.ref.current.addEventListener('input', this._onInput);
+    }
+
+    componentWillUnmount() {
+        this.ref.current.removeEventListener('input', this._onInput);
+    }
+    
+    // TODO : why this is not needed for Preact?
+    componentDidUpdate() {
+        this.ref.current.value = this.valueParser(this.props.value);
     }
 
 }
