@@ -1,6 +1,6 @@
 # Guinda 🍒
 
-*GUIs n' Digital Audio*
+*Graphical User Interfaces and Digital Audio*
 
 A small single file library of audio oriented widgets for use in web views.
 
