@@ -211,7 +211,7 @@ class InputWidget extends StatefulWidget {
 
     constructor(props) {
         super(props);
-        ControlTrait.apply(this, [props]);
+        ControlMixin.apply(this, [props]);
     }
 
     /**
@@ -313,14 +313,14 @@ class RangeInputWidget extends InputWidget {
 
 
 /**
- *  Traits
+ *  Mixins
  */
 
 class ControlEvent extends UIEvent {}
 
 // Merges touch and mouse input events into a single basic set of custom events
 
-function ControlTrait(props) {
+function ControlMixin(props) {
     props = props || {}; // currently unused
 
     this._controlStarted = false;
