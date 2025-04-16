@@ -749,11 +749,11 @@ class Fader extends RangeInputWidget {
          return;
       }
 
-      const y = 100 * (1.0 - this.value);
+      const y = 100 * (1.0 - this._value);
       value.setAttribute('y1', `${y}%`);
 
       if (pointer) {
-         pointer.style.fill = this.value == 0 ? this._style('--pointer-off-color', '#000') 
+         pointer.style.fill = this._value == 0 ? this._style('--pointer-off-color', '#000') 
                   : this._style('--pointer-on-color', window.getComputedStyle(value).stroke);
          pointer.style.stroke = this._style('--pointer-border-color',
                            window.getComputedStyle(body).fill);
