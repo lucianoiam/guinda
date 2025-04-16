@@ -8,8 +8,10 @@ window.React = { createElement: preact.h, ...preact };
 await import('./guinda.js');
 await import('./guinda.react.js');
 
-export const KnobComponent = window.Guinda.React.KnobComponent;
-export const FaderComponent = window.Guinda.React.FaderComponent;
-export const ButtonComponent = window.Guinda.React.ButtonComponent;
+const R = window.Guinda.React;
+
+export const KnobComponent = R.KnobComponent;
+export const FaderComponent = R.FaderComponent;
+export const ButtonComponent = R.ButtonComponent;
 
 delete window.Guinda;

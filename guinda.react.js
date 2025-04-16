@@ -3,85 +3,48 @@
 
 (() => {
 
-class GuindaComponent extends React.Component {
+   const createElement =
+      (typeof React !== 'undefined' && typeof React.createElement === 'function') ? React.createElement :
+      (typeof h === 'function') ? h :
+      null;
 
-    constructor() {
-        super();
+   if (! createElement) {
+      throw new Error('No valid createElement function found');
+   }
 
-        this.ref = React.createRef();
-        this.valueParser = this.constructor._attributeDescriptors.find(d => d.key == 'value').parser;
-    }
+   const R = {};
 
-    render() {
-        const propsCopy = Object.assign({}, this.props);
+   for (const [name, clazz] of Object.entries(window.Guinda)) {
+      const attributeDescriptors = clazz._attributeDescriptors || [];
+      const defaultProps = {};
 
-        propsCopy.ref = this.ref;
-        propsCopy.value = this.valueParser(this.props.value); // initial value
+      let valueParser = null;
 
-        // Preact handles input event automatically, React does not -- why?
-        // Match behavior between both libraries
-        delete propsCopy.onInput;
-
-        this._handleInputEvent = (ev) => {
-            if (this.props.onInput) {
-                this.props.onInput(ev);
+      for (const descriptor of attributeDescriptors) {
+         if (descriptor.parser) {
+            if (descriptor.key === 'value') {
+               valueParser = descriptor.parser;
+            } else {
+               defaultProps[descriptor.key] = descriptor.default;
             }
+         }
+      }
 
-            this.onInput(ev);
-        };
+      const Component = function (props) {      
+         return createElement('g-' + name.toLowerCase(), {
+            ...props,
+            value: valueParser?.(props.value) ?? props.value
+         });
+      };
 
-        return React.createElement(this.constructor._tagName, propsCopy);
-    }
+      const className = `${name}Component`;
 
-    componentDidMount() {
-        this.htmlElement.addEventListener('input', this._handleInputEvent);
-    }
+      Component.defaultProps = defaultProps;
+      Component.displayName = className;
 
-    componentWillUnmount() {
-        this.htmlElement.removeEventListener('input', this._handleInputEvent);
-    }
+      R[className] = Component;
+   }
 
-    // Preact updates element value automatically, React does not -- why?
-    componentDidUpdate() {
-        if (this.htmlElement) {
-            this.htmlElement.value = this.valueParser(this.props.value);
-        }
-    }
-
-    // Convenience getter for the underlying HTML element
-    get htmlElement() {
-        return this.ref.current;
-    }
-
-    // Convenience callback for subclasses
-    onInput(ev) {}
-
-}
-
-const names = Object.keys(window.Guinda).filter(k => typeof(window.Guinda[k]) === 'function');
-window.Guinda.React = {};
-
-for (const name of names) {
-    let cls = class extends GuindaComponent {};
-    cls._tagName = 'g-' + name.toLowerCase();
-    cls._attributeDescriptors = window.Guinda[name]._attributeDescriptors;
-    window.Guinda.React[name + 'Component'] = cls;
-}
-
-Guinda.React.KnobComponent.defaultProps = {
-    min: 0,
-    max: 1,
-    value: 0
-};
-
-Guinda.React.FaderComponent.defaultProps = {
-    min: 0,
-    max: 1,
-    value: 0
-};
-
-Guinda.React.ButtonComponent.defaultProps = {
-    value: false
-};
+   window.Guinda.React = R;
 
 })();
