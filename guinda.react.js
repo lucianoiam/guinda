@@ -15,22 +15,24 @@
    const R = {};
 
    for (const [name, clazz] of Object.entries(window.Guinda)) {
-      const attributeDescriptors = clazz._attributeDescriptors || [];
+      const attributes = clazz._attributes || [];
       const defaultProps = {};
 
       let valueParser = null;
 
-      for (const descriptor of attributeDescriptors) {
-         if (descriptor.parser) {
-            if (descriptor.key === 'value') {
-               valueParser = descriptor.parser;
+      for (const attr of attributes) {
+         if (attr.parser) {
+            if (attr.key === 'value') {
+               valueParser = attr.parser;
+            } else if (attr.key === 'scale') {
+               // TODO
             } else {
-               defaultProps[descriptor.key] = descriptor.default;
+               defaultProps[attr.key] = attr.default;
             }
          }
       }
 
-      const Component = function (props) {      
+      const Component = function (props) {
          return createElement('g-' + name.toLowerCase(), {
             ...props,
             value: valueParser?.(props.value) ?? props.value

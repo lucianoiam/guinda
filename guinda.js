@@ -25,16 +25,16 @@ class Widget extends HTMLElement {
       // constructor will be overwritten by matching HTML attributes before
       // connectedCallback() is called.
 
-      let propLock = false;
+      let lock = false;
 
       this._props = new Proxy(props || {}, {
          set: (obj, prop, value) => {
             obj[prop] = value;
 
-            if (! propLock) {
-               propLock = true;
+            if (! lock) {
+               lock = true;
                this._propertyUpdated(prop, value);
-               propLock = false;
+               lock = false;
             } else {
                // Avoid recursion, this._propertyUpdated()
                // can in turn update properties.
@@ -46,7 +46,7 @@ class Widget extends HTMLElement {
 
       // Fill in any missing property values using defaults
 
-      for (const desc of this.constructor._attributeDescriptors) {
+      for (const desc of this.constructor._attributes) {
          if (!(desc.key in this.props) && (typeof(desc.default) !== 'undefined')) {
             this.props[desc.key] = desc.default;
          }
@@ -68,12 +68,12 @@ class Widget extends HTMLElement {
 
    static get observedAttributes() {
       const This = this.prototype.constructor;
-      return This._attributeDescriptors.map(d => d.key.toLowerCase());
+      return This._attributes.map(d => d.key.toLowerCase());
    }
 
    attributeChangedCallback(name, oldValue, newValue) {
       const This = this.constructor;
-      const desc = This._attributeDescriptors.find(d => name == d.key.toLowerCase());
+      const desc = This._attributes.find(d => name == d.key.toLowerCase());
 
       if (desc) {
          const val = desc.parser(newValue, null);
@@ -96,13 +96,11 @@ class Widget extends HTMLElement {
       throw new TypeError(`_unqualifiedNodeName() not implemented for ${this.name}`);
    }
 
-   static get _attributeDescriptors() {
+   static get _attributes() {
       return [];
    }
 
-   static _initialize() {
-      // Default empty implementation
-   }
+   static _initialize() {}
 
    _attr(name, def) {
       const attr = this.attributes.getNamedItem(name);
@@ -110,7 +108,7 @@ class Widget extends HTMLElement {
    }
 
    _parsedAttr(name) {
-      const attrDesc = this.constructor._attributeDescriptors.find(d => d.key == name);
+      const attrDesc = this.constructor._attributes.find(d => d.key == name);
       return (typeof(attrDesc) !== 'undefined') ?
          attrDesc.parser(this._attr(name), attrDesc.default) : null;
    }
@@ -120,13 +118,9 @@ class Widget extends HTMLElement {
       return prop.length > 0 ? prop : def;
    }
 
-   _propertyUpdated(key, value) {
-      // Default empty implementation
-   }
+   _propertyUpdated(key, value) {}
 
-   _redraw() {
-      // Default empty implementation
-   }
+   _redraw() {}
 
 }
 
@@ -144,18 +138,13 @@ class StatefulWidget extends Widget {
    constructor(props) {
       super(props);
 
-      // Needed for libraries which overwrite this.value, e.g. LemonadeJS
-      // https://jsfiddle.net/3ad5q6cz/10/
-      //this._value = this.value;
-      //delete this.value;
-
       this._value = null;
    }
    
    connectedCallback() {
       super.connectedCallback();
 
-      if (typeof(this._value) !== 'number') { // may have value before attaching
+      if (typeof this._value !== 'number') { // may have value before attaching
          this.value = this._parsedAttr('value'); // initial value
       }
    }
@@ -174,11 +163,9 @@ class StatefulWidget extends Widget {
     */
 
    _valueUpdated() {
-      if (! this._root) {
-         return;
+      if (this._root) {
+         this._redraw();
       }
-
-      this._redraw();
    }
 
 }
@@ -203,16 +190,16 @@ class InputWidget extends StatefulWidget {
     *  Internal
     */
 
-   _setValueAndDispatchInputEventIfNeeded(newValue) {
+   _setValueWithEventTrigger(newValue) {
       if (this._value == newValue) {
          return;
       }
 
       this.value = newValue;
-      this._dispatchInputEvent(newValue);
+      this._triggerInputEvent(newValue);
    }
 
-   _dispatchInputEvent(val) {
+   _triggerInputEvent(val) {
       const ev = new Event('input');
       ev.value = val;
       this.dispatchEvent(ev);
@@ -249,8 +236,8 @@ class RangeInputWidget extends InputWidget {
     *  Internal
     */
 
-   static get _attributeDescriptors() {
-      return super._attributeDescriptors.concat([
+   static get _attributes() {
+      return super._attributes.concat([
          { key: 'value', parser: ValueParser.float, default: 0 },
          { key: 'min'  , parser: ValueParser.float, default: 0 },
          { key: 'max'  , parser: ValueParser.float, default: 1 },
@@ -263,7 +250,7 @@ class RangeInputWidget extends InputWidget {
       this.value = this._scaledValue;
    }
 
-   _setNormalizedValueAndDispatchInputEventIfNeeded(newValue) {
+   _setNormalizedValueWithEventTrigger(newValue) {
       if (this._value == newValue) {
          return;
       }
@@ -272,7 +259,7 @@ class RangeInputWidget extends InputWidget {
       this._value = newValue;
       this._valueUpdated();
 
-      this._dispatchInputEvent(this.value);
+      this._triggerInputEvent(this.value);
    }
 
    _clamp(value) {
@@ -303,7 +290,7 @@ class RangeInputWidget extends InputWidget {
 
 class ControlEvent extends UIEvent {}
 
-// Merges touch and mouse input events into a single basic set of custom events
+// Merges touch and mouse input events into a single set of custom events
 
 function ControlMixin(props) {
    props = props || {}; // currently unused
@@ -311,14 +298,14 @@ function ControlMixin(props) {
    this._controlStarted = false;
    this._controlTimeout = null;
 
-   // Synthesize a getter to keep this._controlStarted effectively private
+   // Synthesize a getter to keep this._controlStarted private
 
    Object.defineProperty(this, 'isControlStarted', { get: () => this._controlStarted });
 
    // Handle touch events preventing subsequent simulated mouse events
 
    this.addEventListener('touchstart', (ev) => {
-      dispatchControlStart(ev, ev.touches[0].clientX, ev.touches[0].clientY);
+      triggerControlStart(ev, ev.touches[0].clientX, ev.touches[0].clientY);
 
       if (ev.cancelable) {
          ev.preventDefault();
@@ -326,7 +313,7 @@ function ControlMixin(props) {
    });
 
    this.addEventListener('touchmove', (ev) => {
-      dispatchControlContinue(ev, ev.touches[0].clientX, ev.touches[0].clientY);
+      triggerControlContinue(ev, ev.touches[0].clientX, ev.touches[0].clientY);
 
       if (ev.cancelable) {
          ev.preventDefault();
@@ -334,21 +321,21 @@ function ControlMixin(props) {
    });
    
    this.addEventListener('touchend', (ev) => {
-      dispatchControlEnd(ev);
+      triggerControlEnd(ev);
 
       if (ev.cancelable) {
          ev.preventDefault();
       }
    });
 
-   // Simulate touch behavior for mouse, for example react to move events outside element
+   // Simulate touch behavior for mouse, eg. catch move events beyond element bounds.
 
    this.addEventListener('mousedown', (ev) => {
       if (ev.button == 0) {
          window.addEventListener('mousemove', mouseMoveListener);
          window.addEventListener('mouseup', mouseUpListener);
 
-         dispatchControlStart(ev, ev.clientX, ev.clientY);
+         triggerControlStart(ev, ev.clientX, ev.clientY);
       }
    });
 
@@ -356,7 +343,7 @@ function ControlMixin(props) {
 
    this.addEventListener('wheel', (ev) => {
       if (!this._controlStarted) {
-         dispatchControlStart(ev, ev.clientX, ev.clientY);
+         triggerControlStart(ev, ev.clientX, ev.clientY);
       }
 
       const k = ev.shiftKey ? 2 : 1;
@@ -364,7 +351,7 @@ function ControlMixin(props) {
       const clientX = this._prevClientX + k * inv * Math.sign(ev.deltaX);
       const clientY = this._prevClientY + k * inv * Math.sign(ev.deltaY);
       
-      dispatchControlContinue(ev, clientX, clientY);
+      triggerControlContinue(ev, clientX, clientY);
 
       if (this._controlTimeout) {
          clearTimeout(this._controlTimeout);
@@ -372,24 +359,24 @@ function ControlMixin(props) {
 
       this._controlTimeout = setTimeout(() => {
          this._controlTimeout = null;
-         dispatchControlEnd(ev);
+         triggerControlEnd(ev);
       }, 100);
 
       ev.preventDefault();
    });
 
    const mouseMoveListener = (ev) => {
-      dispatchControlContinue(ev, ev.clientX, ev.clientY);
+      triggerControlContinue(ev, ev.clientX, ev.clientY);
    };
 
    const mouseUpListener = (ev) => {
       window.removeEventListener('mouseup', mouseUpListener);
       window.removeEventListener('mousemove', mouseMoveListener);
 
-      dispatchControlEnd(ev);
+      triggerControlEnd(ev);
    };
 
-   const dispatchControlStart = (originalEvent, clientX, clientY) => {
+   const triggerControlStart = (originalEvent, clientX, clientY) => {
       this._controlStarted = true;
 
       this._prevClientX = clientX;
@@ -400,7 +387,7 @@ function ControlMixin(props) {
       this.dispatchEvent(ev);
    };
 
-   const dispatchControlContinue = (originalEvent, clientX, clientY) => {
+   const triggerControlContinue = (originalEvent, clientX, clientY) => {
       const ev = createControlEvent('controlcontinue', originalEvent, clientX, clientY);
       
       ev.deltaX = clientX - this._prevClientX;
@@ -412,14 +399,12 @@ function ControlMixin(props) {
       this.dispatchEvent(ev);
    };
 
-   const dispatchControlEnd = (originalEvent) => {
+   const triggerControlEnd = (originalEvent) => {
       this._controlStarted = false;
       const ev = createControlEvent('controlend', originalEvent, this._prevClientX, this._prevClientY);
       this.dispatchEvent(ev);
    };
 
-   // This works as a static function. Because 'this' is not needed,
-   // function() can be used instead of =>
    function createControlEvent(name, originalEvent, clientX, clientY) {
       const ev = new ControlEvent(name);
       Object.defineProperty(ev, 'target', { value: originalEvent.target });
@@ -456,11 +441,13 @@ const ValueScale = {
       normalize: (val, min, max) => {
          min = Math.log(min);
          max = Math.log(max);
+
          return (Math.log(val) - min) / (max - min);
       },
       denormalize: (val, min, max) => {
          min = Math.log(min);
          max = Math.log(max);
+
          return Math.exp(min + (max - min) * val);
       }
    },
@@ -534,9 +521,9 @@ class SvgMath {
 }
 
 
-// +------------------------------------------------------------------------+ //
-// |                    CONCRETE WIDGET IMPLEMENTATIONS                     | //
-// +------------------------------------------------------------------------+ //
+/**
+ *  Concrete widget implementations
+ */
 
 class Knob extends RangeInputWidget {
 
@@ -548,8 +535,8 @@ class Knob extends RangeInputWidget {
       return 'knob';
    }
 
-   static get _attributeDescriptors() {
-      return super._attributeDescriptors.concat([
+   static get _attributes() {
+      return super._attributes.concat([
          { key: 'sensibility', parser: ValueParser.float, default: 2.0 }
       ]);
    }
@@ -558,15 +545,16 @@ class Knob extends RangeInputWidget {
       this._rangeStartAngle = -135;
       this._rangeEndAngle   =  135;
 
-      this._svg =
-         `<svg viewBox="0 0 100 100">
-             <g id="body">
-                <circle id="body" cx="50" cy="50" r="39"/>
-                <circle id="pointer" cx="50" cy="22" r="3.5"/>
-             </g>
-             <path id="range" fill="none" stroke-width="9"/>
-             <path id="value" fill="none" stroke-width="9"/>
-          </svg>`;
+      this._svg =`
+         <svg viewBox="0 0 100 100">
+            <g id="body">
+               <circle id="body" cx="50" cy="50" r="39"/>
+               <circle id="pointer" cx="50" cy="22" r="3.5"/>
+            </g>
+            <path id="range" fill="none" stroke-width="9"/>
+            <path id="value" fill="none" stroke-width="9"/>
+         </svg>
+      `;
    }
 
    constructor() {
@@ -580,12 +568,13 @@ class Knob extends RangeInputWidget {
    connectedCallback() {
       super.connectedCallback();
 
-      this._root.innerHTML =
-         `<style>
-             #body { fill: ${this._style('--body-color', '#404040')}; }
-             #range { stroke: ${this._style('--range-color', '#404040')}; }
-             #value { stroke: ${this._style('--value-color', '#ffffff')}; }
-          </style>`;
+      this._root.innerHTML = `
+         <style>
+            #body { fill: ${this._style('--body-color', '#404040')}; }
+            #range { stroke: ${this._style('--range-color', '#404040')}; }
+            #value { stroke: ${this._style('--value-color', '#ffffff')}; }
+         </style>
+      `;
 
       const This = this.constructor;
 
@@ -628,9 +617,10 @@ class Knob extends RangeInputWidget {
    }
 
    _onMove(ev) {
-      // Note: Relying on MouseEvent movementX/Y results in slow response when
-      //       REAPER is configured to throotle down mouse events on macOS.
-      //       Use custom deltaX/Y instead for such case.
+      // https://www.reddit.com/r/Reaper/comments/rsnjyp/just_found_fix_for_all_reaper_lag_low_fps_on_macos/
+      // Relying on MouseEvent movementX/Y results in slow response when
+      // REAPER is configured to throotle down mouse events on macOS.
+      // Use custom deltaX/Y instead.
 
       const dir = Math.abs(ev.deltaX) - Math.abs(ev.deltaY);
 
@@ -657,7 +647,7 @@ class Knob extends RangeInputWidget {
       const dval = this._dragDistance * this.props.sensibility;
       const val = Math.max(0, Math.min(1.0, this._startValue + dval));
 
-      this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
+      this._setNormalizedValueWithEventTrigger(val);
    }
 
    _onRelease(ev) {
@@ -677,30 +667,36 @@ class Fader extends RangeInputWidget {
       return 'fader';
    }
 
-   static get _attributeDescriptors() {
-      return super._attributeDescriptors.concat([
+   static get _attributes() {
+      return super._attributes.concat([
          { key: 'sensibility', parser: ValueParser.float, default: 10.0 }
       ]);
    }
 
    static _initialize() {
       this._svg = {
-         LINES: `<svg width="100%" height="100%">
-                   <rect id="body" width="100%" height="100%" />
-                   <line id="value" y2="100%" stroke-width="100%" stroke-dasharray="7,1" />
-                 </svg>`,
-         LTR:   `<svg width="100%" height="100%">
-                   <line id="range" x1="5%" x2="5%" y2="100%" y1="0" stroke-width="7%" />
-                   <line id="value" x1="5%" x2="5%" y2="100%" stroke-width="7%" />
-                   <rect id="body" width="80%" height="100%" x="20%" />
-                   <circle id="pointer" cx="60%" cy="20%" r="3.5" />
-                 </svg>`,
-         RTL: `<svg width="100%" height="100%">
-                 <line id="range" x1="95%" x2="95%" y2="100%" y1="0" stroke-width="7%" />
-                 <line id="value" x1="95%" x2="95%" y2="100%" stroke-width="7%" />
-                 <rect id="body" width="80%" height="100%" />
-                 <circle id="pointer" cx="40%" cy="20%" r="3.5" />
-               </svg>`
+         LINES: `
+            <svg width="100%" height="100%">
+               <rect id="body" width="100%" height="100%" />
+               <line id="value" y2="100%" stroke-width="100%" stroke-dasharray="7,1" />
+            </svg>
+         `,
+         LTR: `
+            <svg width="100%" height="100%">
+               <line id="range" x1="5%" x2="5%" y2="100%" y1="0" stroke-width="7%" />
+               <line id="value" x1="5%" x2="5%" y2="100%" stroke-width="7%" />
+               <rect id="body" width="80%" height="100%" x="20%" />
+               <circle id="pointer" cx="60%" cy="20%" r="3.5" />
+            </svg>
+         `,
+         RTL: `
+            <svg width="100%" height="100%">
+               <line id="range" x1="95%" x2="95%" y2="100%" y1="0" stroke-width="7%" />
+               <line id="value" x1="95%" x2="95%" y2="100%" stroke-width="7%" />
+               <rect id="body" width="80%" height="100%" />
+               <circle id="pointer" cx="40%" cy="20%" r="3.5" />
+            </svg>
+         `
       };
    }
 
@@ -715,12 +711,13 @@ class Fader extends RangeInputWidget {
    connectedCallback() {
       super.connectedCallback();
 
-      this._root.innerHTML =
-         `<style>
+      this._root.innerHTML = `
+         <style>
             #body { fill: ${this._style('--body-color', '#404040')}; }
             #range { stroke: ${this._style('--range-color', '#404040')}; }
             #value { stroke: ${this._style('--value-color', '#ffffff')}; }
-          </style>`;
+         </style>
+      `;
       
       const This = this.constructor;
 
@@ -745,7 +742,7 @@ class Fader extends RangeInputWidget {
            value = this._root.getElementById('value'),
            pointer = this._root.getElementById('pointer');
 
-      if (!body) {
+      if (! body) {
          return;
       }
 
@@ -783,12 +780,12 @@ class Fader extends RangeInputWidget {
          const dval = this._dragDistance * this.props.sensibility;
          const val = Math.max(0, Math.min(1.0, this._startValue + dval));
 
-         this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
+         this._setNormalizedValueWithEventTrigger(val);
       } else {
          const y = (ev.clientY - this.getBoundingClientRect().top) / this.clientHeight;
          const val = 1.0 - Math.max(0, Math.min(1.0, y));
 
-         this._setNormalizedValueAndDispatchInputEventIfNeeded(val);
+         this._setNormalizedValueWithEventTrigger(val);
       }
    }
 
@@ -809,8 +806,8 @@ class Button extends InputWidget {
       return 'button';
    }
 
-   static get _attributeDescriptors() {
-      return super._attributeDescriptors.concat([
+   static get _attributes() {
+      return super._attributes.concat([
          { key: 'value'    , parser: ValueParser.bool  , default: false       },
          { key: 'feedback' , parser: ValueParser.bool  , default: true        },
          { key: 'mode'     , parser: ValueParser.string, default: 'momentary' }
@@ -827,15 +824,16 @@ class Button extends InputWidget {
    connectedCallback() {
       super.connectedCallback();
 
-      this._root.innerHTML =
-         `<div style="
+      this._root.innerHTML = `
+         <div style="
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: default">
-          </div>`;
+            cursor: default"
+         ></div>
+      `;
 
       // https://stackoverflow.com/questions/48498581/textcontent-empty-in-connectedcallback-of-a-custom-htmlelement
       let updating = false;
@@ -903,9 +901,9 @@ class Button extends InputWidget {
       }
 
       if (this.props.mode == 'momentary') {
-         this._setValueAndDispatchInputEventIfNeeded(true);
+         this._setValueWithEventTrigger(true);
       } else if (this.props.mode == 'latch') {
-         this._setValueAndDispatchInputEventIfNeeded(! this.value);
+         this._setValueWithEventTrigger(! this.value);
       }
    }
 
@@ -915,7 +913,7 @@ class Button extends InputWidget {
       }
 
       if (this.props.mode == 'momentary') {
-         this._setValueAndDispatchInputEventIfNeeded(false);
+         this._setValueWithEventTrigger(false);
       }
    }
 
@@ -932,8 +930,8 @@ class ResizeHandle extends InputWidget {
       return 'resize';
    }
 
-   static get _attributeDescriptors() {
-      return super._attributeDescriptors.concat([
+   static get _attributes() {
+      return super._attributes.concat([
          { key: 'minWidth'       , parser: ValueParser.int  , default: 100   },
          { key: 'minHeight'      , parser: ValueParser.int  , default: 100   },
          { key: 'maxWidth'       , parser: ValueParser.int  , default: 0     },
@@ -945,24 +943,30 @@ class ResizeHandle extends InputWidget {
 
    static _initialize() {
       this._svg = {
-         LINES_1: `<svg viewBox="0 0 100 100">
-                     <line x1="95" y1="45" x2="45" y2="95" stroke-width="3"/>
-                     <line x1="70" y1="95" x2="95" y2="70" stroke-width="3"/>
-                   </svg>`,
-         LINES_2: `<svg viewBox="0 0 100 100">
-                     <line x1="0" y1="100" x2="100" y2="0"/>
-                     <line x1="100" y1="25" x2="25" y2="100"/>
-                     <line x1="50" y1="100" x2="100" y2="50"/>
-                     <line x1="75" y1="100" x2="100" y2="75"/>
-                   </svg>`,
-         DOTS: `<svg viewBox="0 0 100 100">
-                  <path d="M80.5,75.499c0,2.763-2.238,5.001-5,5.001c-2.761,0-5-2.238-5-5.001c0-2.759,2.239-4.999,5-4.999
-                    C78.262,70.5,80.5,72.74,80.5,75.499z"/>
-                  <path d="M50.5,75.499c0,2.763-2.238,5.001-5,5.001c-2.761,0-5-2.238-5-5.001c0-2.759,2.239-4.999,5-4.999
-                     C48.262,70.5,50.5,72.74,50.5,75.499z"/>
-                  <path d="M80.5,45.499c0,2.763-2.238,5.001-5,5.001c-2.761,0-5-2.238-5-5.001c0-2.759,2.239-4.999,5-4.999
-                     C78.262,40.5,80.5,42.74,80.5,45.499z"/>
-                </svg>`
+         LINES_1: `
+            <svg viewBox="0 0 100 100">
+               <line x1="95" y1="45" x2="45" y2="95" stroke-width="3"/>
+               <line x1="70" y1="95" x2="95" y2="70" stroke-width="3"/>
+            </svg>
+         `,
+         LINES_2: `
+            <svg viewBox="0 0 100 100">
+               <line x1="0" y1="100" x2="100" y2="0"/>
+               <line x1="100" y1="25" x2="25" y2="100"/>
+               <line x1="50" y1="100" x2="100" y2="50"/>
+               <line x1="75" y1="100" x2="100" y2="75"/>
+            </svg>
+         `,
+         DOTS: `
+            <svg viewBox="0 0 100 100">
+               <path d="M80.5,75.499c0,2.763-2.238,5.001-5,5.001c-2.761,0-5-2.238-5-5.001c0-2.759,2.239-4.999,5-4.999
+                  C78.262,70.5,80.5,72.74,80.5,75.499z"/>
+               <path d="M50.5,75.499c0,2.763-2.238,5.001-5,5.001c-2.761,0-5-2.238-5-5.001c0-2.759,2.239-4.999,5-4.999
+                  C48.262,70.5,50.5,72.74,50.5,75.499z"/>
+               <path d="M80.5,45.499c0,2.763-2.238,5.001-5,5.001c-2.761,0-5-2.238-5-5.001c0-2.759,2.239-4.999,5-4.999
+                  C78.262,40.5,80.5,42.74,80.5,45.499z"/>
+            </svg>
+         `
       };
    }
 
@@ -1012,11 +1016,12 @@ class ResizeHandle extends InputWidget {
 
       const color = this._style('--color', '#000');
 
-      this._root.innerHTML =
-         `<style>
+      this._root.innerHTML = `
+         <style>
             path { fill: ${color}; }
             line { stroke: ${color}; }
-         </style>`;
+         </style>
+      `;
 
       const svg = this.constructor._svg;
 
@@ -1057,12 +1062,8 @@ class ResizeHandle extends InputWidget {
    }
 
    _onDrag(ev) {
-      // Note 1: Relying on MouseEvent movementX/Y results in slow response
-      //         when REAPER is configured to throotle down mouse events on
-      //         macOS. Use custom deltaX/Y instead for such case.
-      //         https://www.reddit.com/r/Reaper/comments/rsnjyp/just_found_fix_for_all_reaper_lag_low_fps_on_macos/
-      // Note 2: On Windows touchmove events stop triggering if the window is
-      //         resized while the listener runs. mousemove not affected.
+      // On Windows touchmove events stop triggering if the window is
+      // resized while the listener runs; mousemove not affected.
 
       const useMouseDelta = /mac/i.test(window.navigator.platform) && ev.isInputMouse;
       const deltaX = useMouseDelta ? ev.originalEvent.movementX : ev.deltaX;
@@ -1086,7 +1087,7 @@ class ResizeHandle extends InputWidget {
          this._width = newWidth;
          this._height = newHeight;
 
-         this._setValueAndDispatchInputEventIfNeeded({
+         this._setValueWithEventTrigger({
             width: this._width,
             height: this._height
          });
