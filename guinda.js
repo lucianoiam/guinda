@@ -772,6 +772,10 @@ class Fader extends RangeInputWidget {
    }
 
    _onMove(ev) {
+      if (ev.isInputTouch && !ev.deltaY) {
+         return;
+      }
+
       document.body.style.cursor = ev.isInputWheel ? 'ns-resize' : 'none';
 
       if (ev.isInputWheel) {
