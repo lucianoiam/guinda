@@ -21,33 +21,15 @@ class Widget extends HTMLElement {
    constructor(props) {
       super();
 
-      // Set properties and start observing changes. Properties passed to the
-      // constructor will be overwritten by matching HTML attributes before
-      // connectedCallback() is called.
+      // Properties passed to the constructor will be overwritten by
+      // matching HTML attributes before connectedCallback() is called.
 
-      let lock = false;
-
-      this._props = new Proxy(props || {}, {
-         set: (obj, prop, value) => {
-            obj[prop] = value;
-
-            if (! lock) {
-               lock = true;
-               this._propertyUpdated(prop, value);
-               lock = false;
-            } else {
-               // Avoid recursion, this._propertyUpdated()
-               // can in turn update properties.
-            }
-
-            return true;
-         }
-      });
+      this._updateProps(props);
 
       // Fill in any missing property values using defaults
 
       for (const desc of this.constructor._attributes) {
-         if (!(desc.key in this.props) && (typeof(desc.default) !== 'undefined')) {
+         if (! (desc.key in this.props) && (typeof(desc.default) !== 'undefined')) {
             this.props[desc.key] = desc.default;
          }
       }
@@ -58,10 +40,6 @@ class Widget extends HTMLElement {
 
    get props() {
       return this._props;
-   }
-
-   set props(props) {
-      Object.assign(this._props, props); // merge
    }
 
    // Custom element lifecycle callbacks
@@ -89,7 +67,7 @@ class Widget extends HTMLElement {
    }
 
    /**
-    *  Internal
+    *  Protected
     */
 
    static get _unqualifiedNodeName() {
@@ -118,7 +96,20 @@ class Widget extends HTMLElement {
       return prop.length > 0 ? prop : def;
    }
 
-   _propertyUpdated(key, value) {}
+   _updateProps(props) {
+      props = { ...(this._props || {}), ... props };
+
+      this._props = new Proxy(props, {
+         set: (obj, prop, value) => {
+            obj[prop] = value;
+            this._onPropUpdated(prop, value);
+
+            return true;
+         }
+      });
+   }
+
+   _onPropUpdated(key, value) {}
 
    _redraw() {}
 
@@ -144,8 +135,8 @@ class StatefulWidget extends Widget {
    connectedCallback() {
       super.connectedCallback();
 
-      if (typeof this._value !== 'number') { // may have value before attaching
-         this.value = this._parsedAttr('value'); // initial value
+      if (typeof this._value !== 'number') {
+         this.value = this._parsedAttr('value');
       }
    }
 
@@ -155,14 +146,14 @@ class StatefulWidget extends Widget {
 
    set value(newValue) {
       this._value = newValue;
-      this._valueUpdated();
+      this._onValueUpdated();
    }
 
    /**
-    *  Internal
+    *  Protected
     */
 
-   _valueUpdated() {
+   _onValueUpdated() {
       if (this._root) {
          this._redraw();
       }
@@ -187,11 +178,11 @@ class InputWidget extends StatefulWidget {
    }
 
    /**
-    *  Internal
+    *  Protected
     */
 
    _setValueWithEventTrigger(newValue) {
-      if (this._value == newValue) {
+      if (this.value == newValue) {
          return;
       }
 
@@ -233,7 +224,7 @@ class RangeInputWidget extends InputWidget {
    }
 
    /**
-    *  Internal
+    *  Protected
     */
 
    static get _attributes() {
@@ -245,8 +236,8 @@ class RangeInputWidget extends InputWidget {
       ]);
    }
 
-   _propertyUpdated(key, value) {
-      super._propertyUpdated(key, value);
+   _onPropUpdated(key, value) {
+      super._onPropUpdated(key, value);
       this.value = this._scaledValue;
    }
 
@@ -255,9 +246,8 @@ class RangeInputWidget extends InputWidget {
          return;
       }
 
-      // Do not use this.value since newValue is already normalized [0-1.0]
       this._value = newValue;
-      this._valueUpdated();
+      this._onValueUpdated();
 
       this._triggerInputEvent(this.value);
    }
@@ -285,7 +275,7 @@ class RangeInputWidget extends InputWidget {
 
 
 /**
- *  Mixins
+ *  Events
  */
 
 class ControlEvent extends UIEvent {}
@@ -423,7 +413,7 @@ function ControlMixin(props) {
 
 
 /**
- *  Support
+ *  Value transformations
  */
 
 const ValueScale = {
@@ -491,6 +481,10 @@ class ValueParser {
 }
 
 
+/**
+ *  Graphics
+ */
+
 class SvgMath {
 
    // http://jsbin.com/quhujowota
@@ -522,13 +516,13 @@ class SvgMath {
 
 
 /**
- *  Concrete widget implementations
+ *  Widget implementations
  */
 
 class Knob extends RangeInputWidget {
 
    /**
-    *  Internal
+    *  Protected
     */
    
    static get _unqualifiedNodeName() {
@@ -660,7 +654,7 @@ class Knob extends RangeInputWidget {
 class Fader extends RangeInputWidget {
 
    /**
-    *  Internal
+    *  Protected
     */
    
    static get _unqualifiedNodeName() {
@@ -803,7 +797,7 @@ class Fader extends RangeInputWidget {
 class Button extends InputWidget {
 
    /**
-    *  Internal
+    *  Protected
     */
    
    static get _unqualifiedNodeName() {
@@ -927,7 +921,7 @@ class Button extends InputWidget {
 class ResizeHandle extends InputWidget {
 
    /**
-    *  Internal
+    *  Protected
     */
 
    static get _unqualifiedNodeName() {
@@ -1045,12 +1039,14 @@ class ResizeHandle extends InputWidget {
       }
    }
 
-   _propertyUpdated(key, value) {
-      super._propertyUpdated(key, value);
+   _onPropUpdated(key, value) {
+      super._onPropUpdated(key, value);
 
       if (this.props.maxScale > 0) {
-         this.props.maxWidth = this.props.maxScale * this.props.minWidth;
-         this.props.maxHeight = this.props.maxScale * this.props.minHeight;
+         this._updateProps({
+            maxWidth: this.props.maxScale * this.props.minWidth,
+            maxHeight: this.props.maxScale * this.props.minHeight
+         });
       }
 
       this._aspectRatio = this.props.minWidth / this.props.minHeight;
@@ -1105,7 +1101,15 @@ class ResizeHandle extends InputWidget {
  *  Static library initialization
  */
 
-window.Guinda = { Knob, Fader, Button, ResizeHandle };
-Object.values(window.Guinda).forEach((cls) => cls.defineCustomElement());
+const G = {
+   Knob,
+   Fader,
+   Button,
+   ResizeHandle
+};
+
+Object.values(G).forEach((cls) => cls.defineCustomElement());
+
+window.Guinda = G;
 
 })();
