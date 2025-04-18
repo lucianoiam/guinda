@@ -855,16 +855,6 @@ class Button extends InputWidget {
       this._root.appendChild(slot);
       this.style.display = 'inline-block';
 
-      this.reset();
-   }
-
-   reset() {
-      // Reset inline styles
-      this.style.color = '';
-      this.style.borderColor = '';
-      this.style.backgroundColor = '';
-
-      // Read computed styles
       this._color = this._style('color', /*inherited*/);
       this._backgroundColor = this._style('background-color' /*rgb(0,0,0)*/);
       this._borderColor = this._style('border-color' /*rgb(0,0,0)*/);
