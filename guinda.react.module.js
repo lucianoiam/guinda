@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Luciano Iam <oss@lucianoiam.com>
 // SPDX-License-Identifier: MIT
 
-import * as preact from '/vendor/preact.module.js';
+import * as preact from 'preact';
 
 window.React = { createElement: preact.h, ...preact };
 
