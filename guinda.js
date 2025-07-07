@@ -81,7 +81,10 @@ class Widget extends HTMLElement {
    static _initialize() {}
 
    _attr(name, def) {
-      const attr = this.attributes.getNamedItem(name);
+      let attr = this.attributes.getNamedItem(name);
+      if (!attr && name == 'value') {
+         attr = this.attributes.getNamedItem('defaultvalue'); // React
+      }
       return attr ? attr.value : def;
    }
 
@@ -806,9 +809,8 @@ class Button extends InputWidget {
 
    static get _attributes() {
       return super._attributes.concat([
-         { key: 'value'    , parser: ValueParser.bool  , default: false       },
-         { key: 'feedback' , parser: ValueParser.bool  , default: true        },
-         { key: 'mode'     , parser: ValueParser.string, default: 'momentary' }
+         { key: 'value', parser: ValueParser.bool  , default: false       },
+         { key: 'mode' , parser: ValueParser.string, default: 'momentary' }
       ]);
    }
 
@@ -864,10 +866,6 @@ class Button extends InputWidget {
    }
 
    _redraw() {
-      if (! this._props['feedback']) {
-         return;
-      }
-      
       if (this.value) {
          this.style.color = this._selectedColor;
          this.style.borderColor = this._color;
