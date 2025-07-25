@@ -817,6 +817,8 @@ class Button extends InputWidget {
    constructor() {
       super();
 
+      this._children = null;
+
       this.addEventListener('controlstart', this._onSelect);
       this.addEventListener('controlend', this._onUnselect);
    }
@@ -836,21 +838,18 @@ class Button extends InputWidget {
       `;
 
       // https://stackoverflow.com/questions/48498581/textcontent-empty-in-connectedcallback-of-a-custom-htmlelement
-      let updating = false;
       const slot = document.createElement('slot');
-
       slot.addEventListener('slotchange', (ev) => {
-         if (updating) {
-            updating = false;
-         } else {
-            // Move <g-button> children to <div>
-            updating = true;
-            const div = this._root.querySelector('div');
-            div.innerHTML = '';
-            for (let node of ev.target.assignedNodes()) {
-               div.appendChild(node.cloneNode(true));
+         // Move <g-button> children to <div>
+         if (! this._children) {
+            this._children = ev.target.assignedNodes()
+            for (let node of this._children) {
                this.removeChild(node);
             }
+         }
+         const div = this._root.querySelector('div');
+         for (let node of this._children) {
+            div.appendChild(node);
          }
       });
 
