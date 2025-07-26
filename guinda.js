@@ -846,6 +846,7 @@ class Button extends InputWidget {
             for (let node of this._children) {
                this.removeChild(node);
             }
+            this._root.removeChild(slot);
          }
          const div = this._root.querySelector('div');
          for (let node of this._children) {
