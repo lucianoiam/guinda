@@ -177,7 +177,7 @@ class InputWidget extends StatefulWidget {
 
    constructor(props) {
       super(props);
-      ControlMixin.apply(this, [props]);
+      ControlMixin.apply(this);
    }
 
    /**
@@ -285,9 +285,8 @@ class ControlEvent extends UIEvent {}
 
 // Merges touch and mouse input events into a single set of custom events
 
-function ControlMixin(props) {
-   props = props || {}; // currently unused
-
+function ControlMixin() {
+   this._enableEventDefaultAction = {};
    this._controlStarted = false;
    this._controlTimeout = null;
 
@@ -300,7 +299,7 @@ function ControlMixin(props) {
    this.addEventListener('touchstart', (ev) => {
       triggerControlStart(ev, ev.touches[0].clientX, ev.touches[0].clientY);
 
-      if (ev.cancelable) {
+      if (! this._enableEventDefaultAction.touchstart && ev.cancelable) {
          ev.preventDefault();
       }
    });
@@ -308,7 +307,7 @@ function ControlMixin(props) {
    this.addEventListener('touchmove', (ev) => {
       triggerControlContinue(ev, ev.touches[0].clientX, ev.touches[0].clientY);
 
-      if (ev.cancelable) {
+      if (! this._enableEventDefaultAction.touchmove && ev.cancelable) {
          ev.preventDefault();
       }
    });
@@ -316,7 +315,7 @@ function ControlMixin(props) {
    this.addEventListener('touchend', (ev) => {
       triggerControlEnd(ev);
 
-      if (ev.cancelable) {
+      if (! this._enableEventDefaultAction.touchend && ev.cancelable) {
          ev.preventDefault();
       }
    });
@@ -329,6 +328,10 @@ function ControlMixin(props) {
          window.addEventListener('mouseup', mouseUpListener);
 
          triggerControlStart(ev, ev.clientX, ev.clientY);
+
+         if (! this._enableEventDefaultAction.mousedown && ev.cancelable) {
+            ev.preventDefault();
+         }
       }
    });
 
@@ -355,7 +358,9 @@ function ControlMixin(props) {
          triggerControlEnd(ev);
       }, 100);
 
-      ev.preventDefault();
+      if (! this._enableEventDefaultAction.wheel && ev.cancelable) {
+         ev.preventDefault();
+      }
    });
 
    const mouseMoveListener = (ev) => {
@@ -810,6 +815,7 @@ class Button extends InputWidget {
    static get _attributes() {
       return super._attributes.concat([
          { key: 'value', parser: ValueParser.bool  , default: false       },
+         { key: 'touch', parser: ValueParser.bool  , default: true        },
          { key: 'mode' , parser: ValueParser.string, default: 'momentary' }
       ]);
    }
@@ -818,6 +824,7 @@ class Button extends InputWidget {
       super();
 
       this._children = null;
+      this._enableEventDefaultAction.wheel = true;
 
       this.addEventListener('controlstart', this._onSelect);
       this.addEventListener('controlend', this._onUnselect);
@@ -863,6 +870,16 @@ class Button extends InputWidget {
       this._selectedColor = this._style('--selected-color', '#000');
 
       this._redraw();
+   }
+   
+   _onPropUpdated(key, value) {
+      super._onPropUpdated(key, value);
+
+      if (this._enableEventDefaultAction && (key === 'touch')) {
+         this._enableEventDefaultAction.touchstart = ! value;
+         this._enableEventDefaultAction.touchmove = ! value;
+         this._enableEventDefaultAction.touchend = ! value;
+      }
    }
 
    _redraw() {
