@@ -864,12 +864,14 @@ class Button extends InputWidget {
       this._root.appendChild(slot);
       this.style.display = 'inline-block';
 
-      this._color = this._style('color', /*inherited*/);
-      this._backgroundColor = this._style('background-color' /*rgb(0,0,0)*/);
-      this._borderColor = this._style('border-color' /*rgb(0,0,0)*/);
-      this._selectedColor = this._style('--selected-color', '#000');
+      requestAnimationFrame(() => {
+         this._color = this._style('color', /*inherited*/);
+         this._backgroundColor = this._style('background-color' /*rgb(0,0,0)*/);
+         this._borderColor = this._style('border-color' /*rgb(0,0,0)*/);
+         this._selectedColor = this._style('--selected-color', '#000');
 
-      this._redraw();
+         this._redraw();
+      });
    }
    
    _onPropUpdated(key, value) {
